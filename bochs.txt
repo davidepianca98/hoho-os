@@ -1,0 +1,24 @@
+megs: 64
+
+floppya: 1_44=floppy.img, status=inserted
+
+ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
+
+ata0-master: type=cdrom, path=hoho.iso, status=inserted
+
+boot: cdrom
+
+log: hoho.log
+
+panic: action=ask
+error: action=report
+info: action=report
+debug: action=ignore
+
+mouse: enabled=0
+
+debugger_log: -
+
+gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0
+magic_break: enabled=1
+

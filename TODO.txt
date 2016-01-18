@@ -1,0 +1,18 @@
+TODO:
+- scanf
+- priority scheduling
+- floppy write
+- fat write
+- fat ls
+- ata read
+- ata write
+- test fat32 and fat16
+- ntfs
+- bettern end_proc
+- text editor
+- rimozione processi zombie
+- elf_load e start_proc fondere
+- user mode
+- better keyboard drivers
+- terminal fixes
+- heap free and merge
