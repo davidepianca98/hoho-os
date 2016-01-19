@@ -196,7 +196,7 @@ void fat_write(file *f, char *str) {
         device_t *dev = get_dev_by_id(f->dev);
         uint32_t phys_sector = 32 + (f->current_cluster - 1);
         memset(dma_buffer, 0, SECTOR_SIZE);
-        memcpy(dma_buffer, str, SECTOR_SIZE);
+        memcpy(dma_buffer, str, strlen(str));
         dev->write(phys_sector);
         f->len++;
         

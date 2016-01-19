@@ -49,7 +49,6 @@ void print_file(file f) {
         return;
     }
 
-    printk("len : %d\n", f.len);
     while(f.eof != 1) {
         char buf[512];
         vfs_file_read(&f, buf);
