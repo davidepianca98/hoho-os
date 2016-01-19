@@ -21,33 +21,6 @@
 
 tss_t tss;
 
-void switch_usermode_start(uint32_t stack) {
-    /*asm volatile("mov $0x23, %%ax;  \
-                  mov %%ax, %%ds;   \
-                  mov %%ax, %%es;   \
-                  mov %%ax, %%fs;   \
-                  mov %%ax, %%gs;   \
-                  push $0x23;       \
-                  push %[stack];    \
-                  push $0x202;      \
-                  push $0x1B;       \
-                  push %[entry];    \
-                  iret" : : [stack] "g" (stack), [entry] "g" (entry));*/
-    asm volatile("mov %%eax, %%esp" : : "a" (stack));
-    asm volatile("pop %gs;          \
-                  pop %fs;          \
-                  pop %es;          \
-                  pop %ds;          \
-                  pop %ebp;         \
-                  pop %edi;         \
-                  pop %esi;         \
-                  pop %eax;         \
-                  pop %ebx;         \
-                  pop %ecx;         \
-                  pop %edx;         \
-                  iret");
-}
-
 void flush_tss() {
     asm volatile("mov $0x2B, %ax; \
                   ltr %ax;");

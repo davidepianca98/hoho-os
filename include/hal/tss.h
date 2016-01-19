@@ -49,7 +49,6 @@ typedef struct tss {
     uint16_t iomap;
 } __attribute__((__packed__)) tss_t;
 
-void switch_usermode_start(uint32_t stack);
 void flush_tss();
 void install_tss();
 

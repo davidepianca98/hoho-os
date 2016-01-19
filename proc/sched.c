@@ -124,7 +124,20 @@ void sched_init() {
     sched_state(1);
     disable_int();
     change_page_directory(proc->pdir);
-    switch_usermode_start(proc->esp);
+    
+    asm volatile("mov %%eax, %%esp" : : "a" (proc->esp));
+    asm volatile("pop %gs;          \
+                  pop %fs;          \
+                  pop %es;          \
+                  pop %ds;          \
+                  pop %ebp;         \
+                  pop %edi;         \
+                  pop %esi;         \
+                  pop %eax;         \
+                  pop %ebx;         \
+                  pop %ecx;         \
+                  pop %edx;         \
+                  iret");
 }
 
 int get_nproc() {
