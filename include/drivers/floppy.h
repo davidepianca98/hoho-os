@@ -94,6 +94,8 @@ uint8_t floppy_read_data();
 void floppy_write_ccr(uint8_t val);
 void floppy_read_sector_imp(uint8_t head, uint8_t track, uint8_t sector);
 char *floppy_read_sector(int lba);
+int floppy_write_sector_imp(uint8_t head, uint8_t track, uint8_t sector);
+int floppy_write_sector(int lba);
 void floppy_drive_data(uint32_t stepr, uint32_t loadt, uint32_t unloadt, int dma);
 int floppy_calibrate(uint32_t drive);
 void floppy_check_int(uint32_t * st0, uint32_t *cyl);

@@ -49,7 +49,7 @@ void vfs_init();
 void vfs_ls();
 void vfs_ls_dir(char *dir);
 int vfs_cd(char *name);
-file vfs_file_open(char *name);
+file vfs_file_open(char *name, int w);
 void vfs_file_read(file *f, char *str);
 void vfs_file_write(file *f, char *str);
 void vfs_file_close(file *f);

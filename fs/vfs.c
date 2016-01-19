@@ -33,7 +33,7 @@ void vfs_ls() {
         if(devs[i] != NULL) {
             device_t *device = get_dev_by_id(i);
             if(device)
-                printk("/%s\n", device->mount);
+                printk("%s\n", device->mount);
         }
     }
 }
@@ -56,13 +56,17 @@ int vfs_cd(char *name) {
     return 0;
 }
 
-file vfs_file_open(char *name) {
+file vfs_file_open(char *name, int w) {
     int device = get_dev_id_by_name(name);
-    if(device >= 0) {
-        if(devs[device])
-            return devs[device]->open(name);
-    }
     file f;
+    if(device >= 0) {
+        if(devs[device]) {
+            f = devs[device]->open(name);
+            if(w)
+                f.len = 0;
+            return f;
+        }
+    }
     f.flags = FS_NULL;
     return f;
 }
@@ -71,6 +75,13 @@ void vfs_file_read(file *f, char *str) {
     if(f) {
         if(devs[f->dev])
             devs[f->dev]->read(f, str);
+    } 
+}
+
+void vfs_file_write(file *f, char *str) {
+    if(f) {
+        if(devs[f->dev])
+            devs[f->dev]->write(f, str);
     } 
 }
 

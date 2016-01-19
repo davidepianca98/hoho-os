@@ -25,6 +25,7 @@ typedef struct device {
     int type; // 0 floppy, 1 ata hdd
     char mount[4];
     char* (*read) (int lba);
+    int (*write) (int lba);
     filesystem fs;
     fat_mount_info_t minfo;
 } device_t;

@@ -1,8 +1,7 @@
 TODO:
 - scanf
 - priority scheduling
-- floppy write
-- fat write
+- fat write (needs small fixes)
 - fat ls
 - ata read
 - ata write

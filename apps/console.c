@@ -49,6 +49,7 @@ void print_file(file f) {
         return;
     }
 
+    printk("len : %d\n", f.len);
     while(f.eof != 1) {
         char buf[512];
         vfs_file_read(&f, buf);
@@ -112,9 +113,15 @@ void console_exec(char *buf) {
             int procn = start_proc(arg);
             while(proc_state(procn) != PROC_STOPPED);
         } else if(strncmp(buf, "read", 4) == 0) {
-            file f = vfs_file_open(arg);
+            file f = vfs_file_open(arg, 0);
             print_file(f);
             printk("\n");
+        } else if(strncmp(buf, "write", 5) == 0) {
+            char *buf2 = kmalloc(128);
+            strcpy(buf2, buf + 6);
+            char *arg2 = strchr(buf2, ' ');
+            file f = vfs_file_open("fda/file.txt", 1);
+            vfs_file_write(&f, arg2 + 1);
         } else
             printk("Command not found\n");
     } else {

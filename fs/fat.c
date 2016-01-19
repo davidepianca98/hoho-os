@@ -21,6 +21,8 @@
 
 #define SECTOR_SIZE 512
 
+extern uint32_t *dma_buffer;
+
 uint8_t FAT[SECTOR_SIZE * 2];
 
 void fat_mount(device_t *dev) {
@@ -185,8 +187,38 @@ void fat_read(file *f, char *buf) {
     }
 }
 
-void fat_write(__attribute__((unused)) file *f, __attribute__((unused)) char *str) {
-    
+void fat_write(file *f, char *str) {
+    if(f) {
+        char *file_name = kmalloc(sizeof(char) * 11);
+        to_dos_file_name(f->name, file_name, 11);
+        file_name[11] = 0;
+        
+        device_t *dev = get_dev_by_id(f->dev);
+        uint32_t phys_sector = 32 + (f->current_cluster - 1);
+        memset(dma_buffer, 0, SECTOR_SIZE);
+        memcpy(dma_buffer, str, SECTOR_SIZE);
+        dev->write(phys_sector);
+        f->len++;
+        
+        uint8_t *buf;
+        directory_t *dir;
+        
+        for(int i = 0; i < 4; i++) {
+            buf = (unsigned char *) dev->read(dev->minfo.root_offset + i);
+            dir = (directory_t *) buf;
+            for(int j = 0; j < 16; j++) {
+                char name[11];
+                memcpy(name, dir->filename, 11);
+                name[11] = 0;
+                if(strncmp(file_name, name, 11) == 0) {
+                    dir->file_size = f->len;
+                    dev->write(dev->minfo.root_offset + i);
+                    return;
+                }
+                dir++;
+            }
+        }
+    }
 }
 
 void fat_close(file *f) {
@@ -278,7 +310,7 @@ file fat_open(char *name) {
     return ret;
 }
 
-void fat_ls(char *dir, char *str) {
+void fat_ls(__attribute__((unused)) char *dir, __attribute__((unused)) char *str) {
 /*
     directory_t *dir;
     //finire

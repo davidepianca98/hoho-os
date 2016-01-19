@@ -29,6 +29,7 @@ int cur_drive = 0; // fix this
 static device_t dev_info[4];
 
 static const char floppy_dmabuf[FLOPPY_DMA_LEN] __attribute__((aligned(0x8000)));
+uint32_t *dma_buffer = (uint32_t *) &floppy_dmabuf;
 
 static char *drive_types[8] = {
     "none",
@@ -148,11 +149,62 @@ char *floppy_read_sector(int lba) {
     int head = 0, track = 0, sector = 1;
     floppy_lba_to_chs(lba, &head, &track, &sector);
     floppy_control_motor(1);
-    if(floppy_seek((uint8_t) track, (uint8_t) head) != 0)
+    if(floppy_seek((uint8_t) track, (uint8_t) head) != 0) {
+        floppy_control_motor(0);
         return 0;
+    }
     floppy_read_sector_imp((uint8_t) head, (uint8_t) track, (uint8_t) sector);
     floppy_control_motor(0);
     return (char *) &floppy_dmabuf;
+}
+
+int floppy_write_sector_imp(uint8_t head, uint8_t track, uint8_t sector) {
+    uint32_t st0, cyl;
+    
+    floppy_dma_init();
+    dma_set_write(FLOPPY_DMA_CHANNEL);
+    floppy_send_cmd(FLOPPY_CMD_WRITE_SECT | FLOPPY_CMD_EXT_MULTITRACK | FLOPPY_CMD_EXT_SKIP | FLOPPY_CMD_EXT_DENSITY);
+    floppy_send_cmd((head << 2) | cur_drive);
+    floppy_send_cmd(track);
+    floppy_send_cmd(head);
+    floppy_send_cmd(sector);
+    floppy_send_cmd(FLOPPY_SECTOR_DTL_512);
+    floppy_send_cmd(((sector + 1) >= FLOPPY_SECTORS_PER_TRACK) ? FLOPPY_SECTORS_PER_TRACK : sector + 1);
+    floppy_send_cmd(FLOPPY_GAP3_LENGTH_3_5);
+    floppy_send_cmd(0xFF);
+    
+    floppy_wait_irq();
+    for(int i = 0; i < 7; i++)
+        floppy_read_data();
+    floppy_check_int(&st0, &cyl);
+    
+    if(st0 & 0xC0) {
+        printk("floppy_write_sector: status = %s\n", status[st0 >> 6]);
+        return 0;
+    }
+    if(st0 & 0x08) {
+        printk("floppy_write_sector: drive not ready\n");
+        return 0;
+    }
+    return 1;
+}
+
+int floppy_write_sector(int lba) {
+    if(cur_drive > 3)
+        return -1;
+    int head = 0, track = 0, sector = 1;
+    floppy_lba_to_chs(lba, &head, &track, &sector);
+    floppy_control_motor(1);
+    if(floppy_seek((uint8_t) track, (uint8_t) head) != 0) {
+        floppy_control_motor(0);
+        return -1;
+    }
+    if(!floppy_write_sector_imp((uint8_t) head, (uint8_t) track, (uint8_t) sector)) {
+        floppy_control_motor(0);
+        return -1;
+    }
+    floppy_control_motor(0);
+    return 1;
 }
 
 void floppy_drive_data(uint32_t stepr, uint32_t loadt, uint32_t unloadt, int dma) {
@@ -304,6 +356,7 @@ void floppy_detect_drives() {
         dev_info[0].mount[2] = 'a';
         dev_info[0].mount[3] = 0;
         dev_info[0].read = &floppy_read_sector;
+        dev_info[0].write = &floppy_write_sector;
         fat_init(&dev_info[0].fs);
         device_register(&dev_info[0]);
         cur_drive = 0;
@@ -315,6 +368,7 @@ void floppy_detect_drives() {
         dev_info[1].mount[2] = 'b';
         dev_info[1].mount[3] = 0;
         dev_info[1].read = &floppy_read_sector;
+        dev_info[1].write = &floppy_write_sector;
         fat_init(&dev_info[1].fs);
         device_register(&dev_info[1]);
         cur_drive = 1;
