@@ -65,6 +65,7 @@ void print_file(file f) {
 void console_init(char *usr) {
     printk("Console started\n");
     user = kmalloc(sizeof(strlen(usr) + 1));
+    memset(user, 0, strlen(usr) + 1);
     strcpy(user, usr);
     dir[0] = 0;
     console_run();
@@ -80,10 +81,14 @@ void console_run() {
         if(c == NULL)
             continue;
         keyboard_invalidate_lastkey();
-        if(((int) c >= 32) && ((int) c <= 122))
+        if(((int) c >= 32) && ((int) c <= 122)) {
             buffer[buffer_c++] = c;
-        else if(c == '\r')
-            buffer_c--;
+        } else if(c == '\r') {
+            if(buffer_c > 0)
+                buffer_c--;
+            else
+                continue;
+        }
         printk("%c", c);
         if(c == '\n') {
             buffer[buffer_c] = '\0';

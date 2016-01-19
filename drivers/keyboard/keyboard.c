@@ -134,17 +134,18 @@ char getchar() {
 void gets(char *str) {
     int count = 0;
     char c;
+    
+    asm volatile("sti");
     while(1) {
-        asm volatile("sti");
         c = keyboard_get_lastkey();
-        //asm volatile("cli");
         if(c == NULL)
             continue;
         keyboard_invalidate_lastkey();
         if(((int) c >= 32) && ((int) c <= 122))
             str[count++] = c;
         else if(c == '\r')
-            count--;
+            if(count > 0)
+                count--;
         printk("%c", c);
         if(c == '\n') {
             str[count] = '\0';

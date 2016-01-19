@@ -14,5 +14,4 @@ TODO:
 - elf_load e start_proc fondere
 - user mode
 - better keyboard drivers
-- terminal fixes
 - heap free and merge

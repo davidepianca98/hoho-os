@@ -21,6 +21,7 @@
 *.dylib
 
 # Executables
+*.exc
 *.exe
 *.out
 *.app
@@ -30,3 +31,9 @@
 
 # Debug files
 *.dSYM/
+
+# Log files
+*.log
+
+# Linux files
+*~
