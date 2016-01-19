@@ -1,7 +1,7 @@
 TODO:
 - scanf
 - priority scheduling
-- fat write (needs small fixes)
+- fat read folders
 - fat ls
 - ata read
 - ata write
@@ -10,4 +10,4 @@ TODO:
 - text editor
 - remove zombie processes
 - better keyboard drivers
-- heap free and merge
+- pci

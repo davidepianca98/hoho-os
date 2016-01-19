@@ -26,9 +26,7 @@
 static int pid = 2;
 
 int start_proc(char *name) {
-    process_t *proc;
-
-    proc = (process_t *) kmalloc(sizeof(process_t));
+    process_t *proc = (process_t *) kmalloc(sizeof(process_t));
     strcpy(proc->name, name);
     proc->id = pid++;
     proc->priority = 1;

@@ -34,11 +34,6 @@ void kheap_init() {
     heap_info.first_header->size = heap_info.size;
     heap_info.first_header->is_free = 1;
     heap_info.first_header->next = NULL;
-    /*mm_addr_t *phys;
-    for(int i = 0; i < HEAP_SIZE; i++) {
-        phys = pmm_malloc();
-        vmm_map_phys(get_kern_directory(), (uint32_t) HEAP_START + (i * BLOCKS_LEN), (uint32_t) phys, PAGE_PRESENT_FLAG | PAGE_RW_FLAG);
-    }*/
 }
 
 void *kmalloc(size_t len) {
@@ -55,6 +50,15 @@ void kfree(void *ptr) {
         head->is_free = 1;
         //print_header(head);
         heap_info.used -= head->size;
+        
+        // merge contiguous free sections
+        heap_header_t *app = head->next;
+        while((app != NULL) && (app->is_free == 1)) {
+            head->size += app->size + sizeof(heap_header_t);
+            head->next = app->next;
+            
+            app = app->next;
+        }
     }
 }
 
@@ -73,6 +77,7 @@ void *first_free(size_t len) {
             head2->is_free = 1;
             head2->next = NULL;
             head->next = head2;
+            head->size = len;
             //print_header(head);
             heap_info.used += len + sizeof(heap_header_t);
             return (void *) head + sizeof(heap_header_t);
@@ -80,11 +85,6 @@ void *first_free(size_t len) {
         head = head->next;
     }
     return NULL;
-}
-
-//TODO
-void merge() {
-
 }
 
 int get_heap_size() {

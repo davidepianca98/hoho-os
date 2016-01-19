@@ -106,11 +106,13 @@ file fat_directory(char *dir_name, int devid) {
                     f.type = FS_DIR;
                 else
                     f.type = FS_FILE;
+                kfree(file_name);
                 return f;
             }
             dir++;
         }
     }
+    kfree(file_name);
     f.flags = FS_NULL;
     return f;
 }
@@ -213,11 +215,13 @@ void fat_write(file *f, char *str) {
                 if(strncmp(file_name, name, 11) == 0) {
                     dir->file_size = f->len;
                     dev->write(dev->minfo.root_offset + i);
+                    kfree(file_name);
                     return;
                 }
                 dir++;
             }
         }
+        kfree(file_name);
     }
 }
 

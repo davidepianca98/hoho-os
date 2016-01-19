@@ -41,7 +41,6 @@ void *kmalloc(size_t len);
 void kfree(void *ptr);
 
 void *first_free(size_t len);
-void merge();
 
 int get_heap_size();
 int get_used_heap();

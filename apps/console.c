@@ -69,6 +69,7 @@ void console_init(char *usr) {
     strcpy(user, usr);
     dir[0] = 0;
     console_run();
+    kfree(user);
 }
 
 void console_run() {
@@ -97,6 +98,7 @@ void console_run() {
             printk("%s %s $ ", user, dir);
         }
     }
+    kfree(buffer);
 }
 
 void console_exec(char *buf) {
@@ -121,6 +123,7 @@ void console_exec(char *buf) {
             char *arg2 = strchr(buf2, ' ');
             file f = vfs_file_open("fda/file.txt", 1);
             vfs_file_write(&f, arg2 + 1);
+            kfree(buf2);
         } else
             printk("Command not found\n");
     } else {

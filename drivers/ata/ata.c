@@ -155,6 +155,7 @@ char *ata_read_sector(int lba) {
         buf[i * 2 + 1] = (char) (tmp >> 8);
     }
     delay_400ns();
+    kfree(buf);
     return buf;
 }
 
