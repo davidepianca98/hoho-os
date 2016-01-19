@@ -42,4 +42,5 @@
 # Image files
 *.img
 *.iso
+iso/*
 

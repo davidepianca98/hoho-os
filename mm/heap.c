@@ -43,7 +43,6 @@ void *kmalloc(size_t len) {
     return NULL;
 }
 
-//TODO fix
 void kfree(void *ptr) {
     heap_header_t *head = ptr - sizeof(heap_header_t);
     if((head->is_free == 0) && (head->magic == HEAP_MAGIC)) {
