@@ -53,15 +53,6 @@ struct regs_error {
     uint32_t cs;
 };
 
-void irq_done(uint32_t intn) {
-    if(intn > 16)
-        return;
-    
-    if(intn >= 8)
-        pic_send_command(PIC_EOI_MASK, 1);
-    pic_send_command(PIC_EOI_MASK, 0);
-}
-
 void default_ir_handler() {
     disable_int();
     printk("Unhandled exception\n");

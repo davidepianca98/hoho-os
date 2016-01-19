@@ -42,9 +42,8 @@ int kmain(multiboot_info_t *info) {
     ata_init();
     
     syscall_init();
-    install_tss(5, 0x10, 0);
+    install_tss();
     
-    //console_init("Davide");
     sched_init();
     
     while(1)

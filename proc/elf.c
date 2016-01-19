@@ -122,8 +122,10 @@ int elf_loader(char *name, process_t *proc) {
     
     uint32_t *stackp = (uint32_t *) proc->stack_limit;
     *--stackp = (uint32_t) &end_proc; // the process needs to know where to return
+    *--stackp = 0x23;                 // ss
+    *--stackp = proc->stack_limit - 4;// esp
     *--stackp = 0x202;                // eflags
-    *--stackp = 0x8;                  // cs
+    *--stackp = 0x1B;                 // cs
     *--stackp = proc->eip;            // eip
     *--stackp = 0;                    // eax
     *--stackp = 0;                    // ebx
@@ -132,10 +134,10 @@ int elf_loader(char *name, process_t *proc) {
     *--stackp = 0;                    // esi
     *--stackp = 0;                    // edi
     *--stackp = proc->esp + 4096;     // ebp
-    *--stackp = 0x10;                 // ds
-    *--stackp = 0x10;                 // es
-    *--stackp = 0x10;                 // fs
-    *--stackp = 0x10;                 // gs
+    *--stackp = 0x23;                 // ds
+    *--stackp = 0x23;                 // es
+    *--stackp = 0x23;                 // fs
+    *--stackp = 0x23;                 // gs
     proc->esp = (uint32_t) stackp;
 
     return 1;

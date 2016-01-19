@@ -8,10 +8,7 @@ TODO:
 - ata write
 - test fat32 and fat16
 - ntfs
-- bettern end_proc
 - text editor
-- rimozione processi zombie
-- elf_load e start_proc fondere
-- user mode
+- remove zombie processes
 - better keyboard drivers
 - heap free and merge

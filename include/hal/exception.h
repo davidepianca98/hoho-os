@@ -19,8 +19,6 @@
 
 #include <types.h>
 
-void irq_done(uint32_t intn);
-
 void default_ir_handler();
 
 void ex_divide_by_zero();       // 0

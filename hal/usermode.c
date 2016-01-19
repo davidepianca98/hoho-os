@@ -21,24 +21,7 @@
 
 tss_t tss;
 
-void switch_usermode() {
-    asm volatile("cli; \
-                  mov $0x23, %ax; \
-                  mov %ax, %ds;   \
-                  mov %ax, %es;   \
-                  mov %ax, %fs;   \
-                  mov %ax, %gs;   \
-                  mov %esp, %eax; \
-                  pushl $0x23;    \
-                  pushl %eax;     \
-                  pushf;          \
-                  pushl $0x1B;    \
-                  push $1f;       \
-                  iret;           \
-                  1: ");
-}
-
-void switch_usermode_start(uint32_t stack, int entry) {
+void switch_usermode_start(uint32_t stack) {
     /*asm volatile("mov $0x23, %%ax;  \
                   mov %%ax, %%ds;   \
                   mov %%ax, %%es;   \
@@ -65,24 +48,28 @@ void switch_usermode_start(uint32_t stack, int entry) {
                   iret");
 }
 
-void flush_tss(uint16_t sel) {
-    asm volatile("cli; \
-                  ltr %0;        \
-                  sti;" : : "r" (sel));
+void flush_tss() {
+    asm volatile("mov $0x2B, %ax; \
+                  ltr %ax;");
 }
 
-void install_tss(uint32_t index, uint16_t kernel_ss, uint16_t kernel_esp) {
+void install_tss() {
     uint32_t base = (uint32_t) &tss;
-    gdt_set_entry(index, base, base + sizeof(tss_t), 0xE9);
+    gdt_set_entry(5, base, base + sizeof(tss_t), 0xE9);
     memset((void *) &tss, 0, sizeof(tss_t));
-    tss.ss0 = kernel_ss;
-    tss.esp0 = kernel_esp;
-    /*tss.cs = 0x0B;
-    tss.ss = 0x10;
-    tss.es = 0x10;
-    tss.ds = 0x10;
-    tss.fs = 0x10;
-    tss.gs = 0x10;*/
-    flush_tss(index * sizeof(struct gdt_info));
+    
+    tss.ss0 = 0x10;
+    
+    void *kernel_stack = pmm_malloc();
+    vmm_map_phys(get_kern_directory(), (uint32_t) &kernel_end, (uint32_t) kernel_stack, PAGE_PRESENT_FLAG | PAGE_RW_FLAG);
+    tss.esp0 = (uint32_t) &kernel_end;
+    tss.cs = 0x0B;
+    tss.ss = 0x13;
+    tss.es = 0x13;
+    tss.ds = 0x13;
+    tss.fs = 0x13;
+    tss.gs = 0x13;
+    
+    flush_tss();
 }
 

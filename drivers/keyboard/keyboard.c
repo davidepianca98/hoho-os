@@ -38,22 +38,12 @@ static uint8_t alt = 0;*/
 
 uint8_t *keycache;
 
-void keyboard_irq() {
-    asm volatile("add $12, %esp");
-    asm volatile("pusha");
-    asm volatile("cli");
-    keyboard_read_key();
-    irq_done(1);
-    asm volatile("sti");
-    asm volatile("popa");
-    asm volatile("iret");
-}
+extern void keyboard_int();
 
 void keyboard_init() {
     outportb(KBD_CHECK, 0xAE);
-    install_ir(33, 0x80 | 0x0E, 0x8, &keyboard_irq);
+    install_ir(33, 0x80 | 0x0E, 0x8, &keyboard_int);
     keycache = kmalloc(sizeof(uint8_t) * 256);
-    printk("Keyboard enabled\n");
 	kbd_enabled = 1;
 }
 

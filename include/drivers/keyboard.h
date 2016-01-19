@@ -94,7 +94,6 @@ enum KEYCODE {
 	ENTER_RELEASED = 0x9C,
 };
 
-void keyboard_irq();
 void keyboard_init();
 uint8_t keyboard_enabled();
 void keyboard_read_key();

@@ -102,20 +102,20 @@ void sched_init() {
     proc->stack_limit = ((uint32_t) proc->esp + 4096);
     
     uint32_t *stackp = (uint32_t *) proc->stack_limit;
-    *--stackp = 0x202;              // eflags
-    *--stackp = 0x8;                // cs
-    *--stackp = proc->eip;          // eip
-    *--stackp = 0;                  // eax
-    *--stackp = 0;                  // ebx
-    *--stackp = 0;                  // ecx
-    *--stackp = 0;                  // edx
-    *--stackp = 0;                  // esi
-    *--stackp = 0;                  // edi
-    *--stackp = proc->esp + 4096;   // ebp
-    *--stackp = 0x10;               // ds
-    *--stackp = 0x10;               // es
-    *--stackp = 0x10;               // fs
-    *--stackp = 0x10;               // gs
+    *--stackp = 0x202;                // eflags
+    *--stackp = 0x8;                  // cs
+    *--stackp = proc->eip;            // eip
+    *--stackp = 0;                    // eax
+    *--stackp = 0;                    // ebx
+    *--stackp = 0;                    // ecx
+    *--stackp = 0;                    // edx
+    *--stackp = 0;                    // esi
+    *--stackp = 0;                    // edi
+    *--stackp = proc->esp + 4096;     // ebp
+    *--stackp = 0x10;                 // ds
+    *--stackp = 0x10;                 // es
+    *--stackp = 0x10;                 // fs
+    *--stackp = 0x10;                 // gs
     proc->esp = (uint32_t) stackp;
     
     proc->next = proc;
@@ -124,7 +124,7 @@ void sched_init() {
     sched_state(1);
     disable_int();
     change_page_directory(proc->pdir);
-    switch_usermode_start(proc->esp, proc->eip);
+    switch_usermode_start(proc->esp);
 }
 
 int get_nproc() {
