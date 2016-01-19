@@ -3,6 +3,7 @@
 *.ko
 *.obj
 *.elf
+*.bin
 
 # Precompiled Headers
 *.gch
@@ -37,3 +38,8 @@
 
 # Linux files
 *~
+
+# Image files
+*.img
+*.iso
+

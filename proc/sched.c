@@ -76,17 +76,13 @@ void sched_set_null_proc(int id) {
 }
 
 void sched_remove_proc(int id) {
-    process_t *app = list;
-    for(int i = 0; i < n_proc; i++) {
-        if(app->id == id) {
-            app->prec->next = app->next;
-            app->next->prec = app->prec;
-            //need to free ram
-            n_proc--;
-            list = app->next;
-            break;
-        }
-        app = app->next;
+    process_t *app = get_proc_by_id(id);
+    if(app->id == id) {
+        app->prec->next = app->next;
+        app->next->prec = app->prec;
+        n_proc--;
+        // free heap memory
+        list = app->next;
     }
 }
 

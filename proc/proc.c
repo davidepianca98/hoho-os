@@ -56,7 +56,9 @@ void end_proc(int ret) {
         sched_state(1);
         return;
     }
-    /*
+    
+    cur->state = PROC_STOPPED;
+    
     void *stack = get_phys_addr(cur->pdir, (uint32_t) cur->esp);
     
     vmm_unmap_phys_addr(cur->pdir, (uint32_t) cur->esp);
@@ -69,11 +71,11 @@ void end_proc(int ret) {
 
 		vmm_unmap_phys_addr(cur->pdir, virt);
 		pmm_free((void *) phys);
-	}*/
+	}
+	uint32_t *phys = get_phys_addr(cur->pdir, (vmm_addr_t) cur->pdir);
+	pmm_free(phys);
 	//sched_remove_proc(cur->id);
-	cur->state = PROC_STOPPED;
     sched_state(1);
-    enable_int();
     while(1);
 }
 
