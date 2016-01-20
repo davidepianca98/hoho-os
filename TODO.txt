@@ -2,7 +2,8 @@ TODO:
 - scanf
 - priority scheduling
 - fat read folders
-- fat ls
+- fat touch
+- fat delete
 - ata read
 - ata write
 - test fat32 and fat16

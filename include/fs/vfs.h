@@ -38,7 +38,7 @@ typedef struct fsys {
     void (*write) (file *f, char *str);
     void (*close) (file *f);
     file (*open) (char *name);
-    void (*ls) (char *dir, char *str);
+    void (*ls) (char *dir);
 } filesystem;
 
 #define FS_FILE     0

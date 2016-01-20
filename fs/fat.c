@@ -75,6 +75,26 @@ void to_dos_file_name(char *name, char *str, int len) {
     }
 }
 
+void to_normal_file_name(char *name, char *str, int len) {
+    int i, j = 0, flag = 1;
+    
+    if((len > 11) || (!name) || (!str))
+        return;
+    
+    memset(str, ' ', len);
+    for(i = 0; i < strlen(name) && i < len; i++) {
+        if(name[i] != ' ') {
+            str[j] = tolower(name[i]);
+            j++;
+        } else if((flag == 1) && (name[9] != ' ')) {
+            flag = 0;
+            str[j] = '.';
+            j++;
+        }
+    }
+    str[j] = 0;
+}
+
 void print_dir(directory_t *dir) {
     printk("%s %s %d %d %d\n", dir->filename, dir->extension, dir->attrs, dir->first_cluster, dir->file_size);
 }
@@ -239,7 +259,7 @@ file fat_open_subdir(file f, char *name) {
     
     while(!f.eof) {
         char buf[SECTOR_SIZE];
-        fat_read(&f2, buf);
+        fat_read(&f, buf);
         
         directory_t *dir = (directory_t *) buf;
         
@@ -283,13 +303,13 @@ file fat_open(char *name) {
         return ret;
     }
     p++;
-    while(p) {
+    while(path) {
         char pathname[16];
         int i;
         for(i = 0; i < 16; i++) {
-            if((p[i] == '/') || (p[i] == '\0'))
+            if((path[i] == '/') || (path[i] == '\0'))
                 break;
-            pathname[i] = p[i];
+            pathname[i] = path[i];
         }
         pathname[i] = 0;
         printk("xd:%s\n", pathname);
@@ -305,43 +325,46 @@ file fat_open(char *name) {
         else if(cur_dir.flags == FS_FILE)
             return cur_dir;
         
-        p = strchr(p + 1, '/');
-        if(p)
-            p++;
+        path = strchr(path, '/');
+        if(path)
+            path++;
     }
     file ret;
     ret.flags = FS_NULL;
     return ret;
 }
 
-void fat_ls(__attribute__((unused)) char *dir, __attribute__((unused)) char *str) {
-/*
-    directory_t *dir;
-    //finire
+void fat_ls(char *dir) {
+    directory_t *direc;
+    uint8_t *buf;
+    
+    char *file_name = kmalloc(sizeof(char) * 11);
+    to_dos_file_name(dir, file_name, 11);
+    file_name[11] = 0;
+    
+    char *normal_name = kmalloc(sizeof(char) * 11);
+    
+    device_t *dev = get_dev_by_name(dir);
     for(int i = 0; i < 14; i++) {
         buf = (unsigned char *) dev->read(dev->minfo.root_offset + i);
-        dir = (directory_t *) buf;
+        direc = (directory_t *) buf;
         for(int j = 0; j < 16; j++) {
             char name[11];
-            memcpy(name, dir->filename, 11);
+            memcpy(name, direc->filename, 11);
+            direc++;
             name[11] = 0;
-            //if(j<2)printk("%shoho name:%shoho\n", file_name, name);
-            //if(j < 2)print_dir(dir);
+            if(name[0] == 0)
+                continue;
+            to_normal_file_name(name, normal_name, 11);
+            printk("%s  ", normal_name);
             if(strncmp(file_name, name, 11) == 0) {
-                strcpy(f.name, dir_name);
-                f.current_cluster = dir->first_cluster;
-                f.len = dir->file_size;
-                f.eof = 0;
-                f.dev = devid;
-                if(dir->attrs == 0x10)
-                    f.type = FS_DIR;
-                else
-                    f.type = FS_FILE;
-                return f;
+                // TODO
             }
-            dir++;
         }
-    }*/
+    }
+    printk("\n");
+    kfree(file_name);
+    kfree(normal_name);
 }
 
 void fat_init(filesystem *fs_fat) {

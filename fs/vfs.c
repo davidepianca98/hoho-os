@@ -39,11 +39,10 @@ void vfs_ls() {
 }
 
 void vfs_ls_dir(char *dir) {
-    char buf[512];
     int device = get_dev_id_by_name(dir);
     if(device >= 0) {
         if(devs[device])
-            return devs[device]->ls(dir, buf);
+            return devs[device]->ls(dir);
     }
 }
 
