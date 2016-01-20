@@ -1,7 +1,6 @@
 TODO:
 - scanf
 - priority scheduling
-- fat read folders
 - fat touch
 - fat delete
 - ata read

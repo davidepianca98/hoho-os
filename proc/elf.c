@@ -62,7 +62,7 @@ int elf_loader(char *name, process_t *proc) {
     }
     
     f = vfs_file_open(name, 0);
-    if((f.flags == FS_NULL) || ((f.flags & FS_DIR) == FS_DIR)) {
+    if((f.type == FS_NULL) || ((f.type & FS_DIR) == FS_DIR)) {
         printk("Failed opening file\n");
         return 0;
     }

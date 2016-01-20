@@ -60,7 +60,7 @@ void to_dos_file_name(char *name, char *str, int len) {
         return;
     
     memset(str, ' ', len);
-    for(i = 0; i < strlen(name) - 1 && i < len; i++) {
+    for(i = 0; i < strlen(name) && i < len; i++) {
         if((name[i] == '.') || (i == 8))
             break;
         str[i] = toupper(name[i]);
@@ -122,7 +122,7 @@ file fat_directory(char *dir_name, int devid) {
                 f.len = dir->file_size;
                 f.eof = 0;
                 f.dev = devid;
-                if(dir->attrs == 0x10)
+                if(dir->attrs & 0x10)
                     f.type = FS_DIR;
                 else
                     f.type = FS_FILE;
@@ -133,7 +133,7 @@ file fat_directory(char *dir_name, int devid) {
         }
     }
     kfree(file_name);
-    f.flags = FS_NULL;
+    f.type = FS_NULL;
     return f;
 }
 
@@ -247,41 +247,46 @@ void fat_write(file *f, char *str) {
 
 void fat_close(file *f) {
     if(f)
-        f->flags = FS_NULL;
+        f->type = FS_NULL;
 }
 
 file fat_open_subdir(file f, char *name) {
     file f2;
-    
-    char filename[11];
-    to_dos_file_name(name, filename, 11);
-    filename[11] = 0;
+    directory_t *dir;
+    char *file_name = kmalloc(11);
+    to_dos_file_name(name, file_name, 11);
+    file_name[11] = 0;
+    char *buf = kmalloc(SECTOR_SIZE);
     
     while(!f.eof) {
-        char buf[SECTOR_SIZE];
         fat_read(&f, buf);
         
-        directory_t *dir = (directory_t *) buf;
+        dir = (directory_t *) buf;
         
         for(int i = 0; i < 16; i++) {
             char cur_name[11];
             memcpy(cur_name, dir->filename, 11);
             cur_name[11] = 0;
-            if(strcmp(cur_name, filename) == 0) {
+            if(strcmp(cur_name, file_name) == 0) {
                 strcpy(f2.name, name);
                 f2.current_cluster = dir->first_cluster;
                 f2.len = dir->file_size;
                 f2.eof = 0;
-                if(dir->attrs == 0x10)
-                    f2.flags = FS_DIR;
+                f2.dev = f.dev;
+                if(dir->attrs & 0x10)
+                    f2.type = FS_DIR;
                 else
-                    f2.flags = FS_FILE;
+                    f2.type = FS_FILE;
+                kfree(buf);
+                kfree(file_name);
                 return f2;
             }
             dir++;
         }
     }
-    f2.flags = FS_NULL;
+    kfree(buf);
+    kfree(file_name);
+    f2.type = FS_NULL;
     return f2;
 }
 
@@ -296,10 +301,10 @@ file fat_open(char *name) {
     p = strchr(path, '/');
     if(!p) {
         cur_dir = fat_directory(path, cur_dir.dev);
-        if(cur_dir.flags == FS_FILE)
+        if(cur_dir.type == FS_FILE)
             return cur_dir;
         file ret;
-        ret.flags = FS_NULL;
+        ret.type = FS_NULL;
         return ret;
     }
     p++;
@@ -312,7 +317,6 @@ file fat_open(char *name) {
             pathname[i] = path[i];
         }
         pathname[i] = 0;
-        printk("xd:%s\n", pathname);
         if(root) {
             cur_dir = fat_directory(pathname, cur_dir.dev);
             root = 0;
@@ -320,9 +324,9 @@ file fat_open(char *name) {
             cur_dir = fat_open_subdir(cur_dir, pathname);
         }
         
-        if(cur_dir.flags == FS_NULL)
+        if(cur_dir.type == FS_NULL)
             break;
-        else if(cur_dir.flags == FS_FILE)
+        else if(cur_dir.type == FS_FILE)
             return cur_dir;
         
         path = strchr(path, '/');
@@ -330,7 +334,7 @@ file fat_open(char *name) {
             path++;
     }
     file ret;
-    ret.flags = FS_NULL;
+    ret.type = FS_NULL;
     return ret;
 }
 

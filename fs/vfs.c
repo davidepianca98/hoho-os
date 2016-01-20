@@ -66,7 +66,7 @@ file vfs_file_open(char *name, int w) {
             return f;
         }
     }
-    f.flags = FS_NULL;
+    f.type = FS_NULL;
     return f;
 }
 
@@ -74,7 +74,7 @@ void vfs_file_read(file *f, char *str) {
     if(f) {
         if(devs[f->dev])
             devs[f->dev]->read(f, str);
-    } 
+    }
 }
 
 void vfs_file_write(file *f, char *str) {

@@ -39,12 +39,12 @@ void print_meminfo() {
 }
 
 void print_file(file f) {
-    if(f.flags == FS_NULL) {
+    if(f.type == FS_NULL) {
         printk("Cannot open file\n");
         return;
     }
 
-    if((f.flags & FS_DIR) == FS_DIR) {
+    if((f.type & FS_DIR) == FS_DIR) {
         printk("Cannot display content of directory.\n");
         return;
     }
