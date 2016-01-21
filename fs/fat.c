@@ -338,15 +338,63 @@ file fat_open(char *name) {
     return ret;
 }
 
+file fat_cd(char *dir) {
+    file cur_dir;
+    char *p = 0;
+    int root = 1;
+    char *path = dir;
+    
+    cur_dir.dev = get_dev_id_by_name(dir);
+    path = path + 4;
+    p = strchr(path, '/');
+    if(!p) {
+        cur_dir = fat_directory(path, cur_dir.dev);
+        if(cur_dir.type == FS_DIR)
+            return cur_dir;
+        file ret;
+        ret.type = FS_NULL;
+        return ret;
+    }
+    p++;
+    while(path) {
+        char pathname[16];
+        int i;
+        for(i = 0; i < 16; i++) {
+            if((path[i] == '/') || (path[i] == '\0'))
+                break;
+            pathname[i] = path[i];
+        }
+        pathname[i] = 0;
+        if(root) {
+            cur_dir = fat_directory(pathname, cur_dir.dev);
+            root = 0;
+        } else {
+            cur_dir = fat_open_subdir(cur_dir, pathname);
+        }
+        
+        path = strchr(path, '/');
+        if(path)
+            path++;
+        
+        if(cur_dir.type == FS_NULL)
+            break;
+        else if((cur_dir.type == FS_DIR) && (!path))
+            return cur_dir;
+    }
+    file ret;
+    ret.type = FS_NULL;
+    return ret;
+}
+
 void fat_ls(char *dir) {
     directory_t *direc;
     uint8_t *buf;
     
-    char *file_name = kmalloc(sizeof(char) * 11);
+    char *file_name = kmalloc(11);
     to_dos_file_name(dir, file_name, 11);
     file_name[11] = 0;
     
-    char *normal_name = kmalloc(sizeof(char) * 11);
+    char *normal_name = kmalloc(11);
     
     device_t *dev = get_dev_by_name(dir);
     for(int i = 0; i < 14; i++) {
@@ -379,5 +427,6 @@ void fat_init(filesystem *fs_fat) {
     fs_fat->close = &fat_close;
     fs_fat->open = &fat_open;
     fs_fat->ls = &fat_ls;
+    fs_fat->cd = &fat_cd;
 }
 

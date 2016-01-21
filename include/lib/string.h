@@ -20,6 +20,7 @@
 #include <types.h>
 
 void strcpy(char *str, char *format);
+void strncpy(char *str, char *format, size_t len);
 int strcmp(char *str1, char *str2);
 int strncmp(char *str1, char *str2, size_t len);
 void memset(void *start, uint32_t val, size_t len);
@@ -34,5 +35,6 @@ char toupper(char c);
 char tolower(char c);
 int vsprintf(char *str, char *format, va_list args);
 char *strchr(char *str, int c);
+char *strcat(char *dest, char *src);
 
 #endif

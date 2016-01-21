@@ -28,9 +28,11 @@ extern uint32_t kernel_start;
 extern uint32_t kernel_end;
 
 char *user;
-char dir[11];
+char *dir;
 
 int buffer_c = 0;
+
+char privilege = '$';
 
 void print_meminfo() {
     printk("Total mem: %d MB\nFree mem: %d MB\n", get_mem_size() / 1024 / 1024, (get_max_blocks() - get_used_blocks()) * 4096 / 1024 / 1024);
@@ -67,13 +69,14 @@ void console_init(char *usr) {
     user = kmalloc(sizeof(strlen(usr) + 1));
     memset(user, 0, strlen(usr) + 1);
     strcpy(user, usr);
-    dir[0] = 0;
+    dir = kmalloc(64);
+    memset(dir, 0, 64);
     console_run();
     kfree(user);
 }
 
 void console_run() {
-    char *buffer = kmalloc(sizeof(char) * 64);
+    char *buffer = kmalloc(64);
     char c = 0;
     printk("%s $ ", user);
     buffer_c = 0;
@@ -95,34 +98,51 @@ void console_run() {
             buffer[buffer_c] = '\0';
             console_exec(buffer);
             buffer_c = 0;
-            printk("%s %s $ ", user, dir);
+            printk("%s %s %c ", user, dir, privilege);
         }
     }
     kfree(buffer);
 }
 
 void console_exec(char *buf) {
+    char *senddir = kmalloc(64);
+    memset(senddir, 0, 64);
     char *arg = strchr(buf, ' ');
     if(arg) {
         arg++;
         if(strncmp(buf, "cd", 2) == 0) {
-            if(vfs_cd(arg))
-                strcpy(dir, arg);
-            else
-                printk("Directory not found\n");
+            strcpy(senddir, dir);
+            strcat(senddir, "/");
+            strcat(senddir, arg);
+            if(vfs_cd(senddir)) {
+                strcpy(dir, senddir);
+            } else
+                printk("cd %s: directory not found\n", senddir);
         } else if(strncmp(buf, "start", 5) == 0) {
             int procn = start_proc(arg);
             while(proc_state(procn) != PROC_STOPPED);
         } else if(strncmp(buf, "read", 4) == 0) {
-            file f = vfs_file_open(arg, 0);
-            print_file(f);
+            strcpy(senddir, dir);
+            strcat(senddir, "/");
+            strcat(senddir, arg);
+            file f = vfs_file_open(senddir, 0);
+            if(f.type != FS_FILE)
+                printk("read: file %s not found\n", buf);
+            else
+                print_file(f);
             printk("\n");
         } else if(strncmp(buf, "write", 5) == 0) {
             char *buf2 = kmalloc(128);
             strcpy(buf2, buf + 6);
             char *arg2 = strchr(buf2, ' ');
-            file f = vfs_file_open("fda/file.txt", 1);
-            vfs_file_write(&f, arg2 + 1);
+            strcpy(senddir, dir);
+            strcat(senddir, "/");
+            strncpy(senddir + strlen(dir) + 1, buf2, strlen(buf2) - strlen(arg2));
+            file f = vfs_file_open(senddir, 1);
+            if(f.type != FS_FILE)
+                printk("write: file %s not found\n", senddir);
+            else
+                vfs_file_write(&f, arg2 + 1);
             kfree(buf2);
         } else
             printk("Command not found\n");
@@ -143,7 +163,7 @@ void console_exec(char *buf) {
         } else if(strcmp(buf, "clear") == 0)
             clear();
         else if(strcmp(buf, "cd") == 0)
-            dir[0] = 0;
+            memset(dir, 0, 64);
         else if(strcmp(buf, "proc") == 0)
             print_procs();
         else if(strcmp(buf, "halt") == 0) {
@@ -156,5 +176,6 @@ void console_exec(char *buf) {
         } else
             printk("Command not found\n");
     }
+    kfree(senddir);
 }
 

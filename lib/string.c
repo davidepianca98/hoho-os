@@ -23,6 +23,16 @@ void strcpy(char *str, char *format) {
     }
 }
 
+void strncpy(char *str, char *format, size_t len) {
+    while(len--) {
+        if(*format)
+            *str++ = *format++;
+        else
+            break;
+    }
+    *str = 0;
+}
+
 int strcmp(char *str1, char *str2) {
     while(*str1 != '\0') {
         if((*str2 == '\0') || (*str1 > *str2))
@@ -202,5 +212,15 @@ char *strchr(char *str, int c) {
         p++;
     }
     return NULL;
+}
+
+char *strcat(char *dest, char *src) {
+    char *ret = dest;
+    
+    while(*dest)
+        dest++;
+    while(*src)
+        *dest++ = *src++;
+    return ret;
 }
 

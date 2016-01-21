@@ -29,6 +29,8 @@ void device_register(device_t *dev) {
 }
 
 device_t *get_dev_by_name(char *name) {
+    if(name[0] == '/')
+        name++;
     for(int i = 0; i < 8; i++) {
         if(strncmp(devices[i]->mount, name, 3) == 0)
             return devices[i];
@@ -45,6 +47,8 @@ device_t *get_dev_by_id(int id) {
 }
 
 int get_dev_id_by_name(char *name) {
+    if(name[0] == '/')
+        name++;
     for(int i = 0; i < 8; i++) {
         if(strncmp(devices[i]->mount, name, 3) == 0)
             return devices[i]->id;

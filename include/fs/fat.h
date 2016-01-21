@@ -98,6 +98,7 @@ file fat_open_subdir(file f, char *name);
 file fat_open(char *name);
 void fat_init(filesystem *fs_fat);
 void fat_ls(char *dir);
+file fat_cd(char *dir);
 
 #endif
 
