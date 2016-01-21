@@ -19,11 +19,12 @@
 #include <proc/proc.h>
 #include <drivers/keyboard.h>
 
-#define MAX_SYSCALL 2
+#define MAX_SYSCALL 3
 
 static void *syscalls[] = {
     &printk,
-    &gets
+    &gets,
+    &clear
 };
 
 void syscall_init() {

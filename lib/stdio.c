@@ -46,11 +46,10 @@ void scanf(char *format, ...) {
                 switch(format[i]) {
                     case 'c':
                         c = va_arg(args, char *);
+                        asm volatile("lea (%0), %%ebx" : : "b" (str));
                         asm volatile("mov $1, %eax; \
 	                                  int $0x72");
-	                    int val;
-	                    asm volatile("mov %%eax, %0" : "=r" (val));
-	                    *c = (char) val;
+	                    *c = (char) str[0];
                         break;
                     case 'd':
                     case 'i':
@@ -62,7 +61,10 @@ void scanf(char *format, ...) {
                         break;
                     case 's':
                         c = va_arg(args, char *);
-                        //strcpy(s, gets());
+                        asm volatile("lea (%0), %%ebx" : : "b" (str));
+                        asm volatile("mov $1, %eax; \
+	                                  int $0x72");
+	                    strcpy(c, str);
                         break;
                 }
                 break;

@@ -120,7 +120,6 @@ char getchar() {
     }
 }
 
-// TODO fix
 void gets(char *str) {
     int count = 0;
     char c;
