@@ -1,5 +1,4 @@
 TODO:
-- scanf
 - priority scheduling
 - fat touch
 - fat delete

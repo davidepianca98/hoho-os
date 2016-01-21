@@ -64,7 +64,7 @@ void scanf(char *format, ...) {
                         asm volatile("lea (%0), %%ebx" : : "b" (str));
                         asm volatile("mov $1, %eax; \
 	                                  int $0x72");
-	                    strcpy(c, str);
+                        strcpy(c, str);
                         break;
                 }
                 break;

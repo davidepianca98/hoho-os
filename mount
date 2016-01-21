@@ -17,8 +17,10 @@
 sudo losetup /dev/loop4 floppy.img
 sudo mount /dev/loop4 /mnt -t msdos -o "fat=12"
 #su
-sudo rm /mnt/proc.exc
-sudo cp apps/example/proc.exc /mnt/proc.exc
+sudo rm /mnt/proc
+sudo cp apps/example/proc /mnt/proc
+sudo rm /mnt/editor
+sudo cp apps/editor/editor /mnt/editor
 sudo umount /mnt
 sudo losetup -d /dev/loop4
 

@@ -16,6 +16,7 @@ all:
 	cd proc; make
 	
 	cd apps/example; make
+	cd apps/editor; make
 
 	$(CC) $(CFLAGS) main.c
 	$(LD) $(LDFLAGS) -o kernel.bin \

@@ -17,7 +17,7 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include <types.h>
+#include "../types.h"
 
 void strcpy(char *str, char *format);
 void strncpy(char *str, char *format, size_t len);
