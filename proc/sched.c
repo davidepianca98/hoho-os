@@ -45,7 +45,7 @@ void main_proc() {
 
 uint32_t schedule(uint32_t esp) {
     if(get_sched_state() == 0)
-        return list->esp;
+        return esp;
     list->esp = esp;
     do {
         list = list->next;
