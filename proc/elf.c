@@ -52,7 +52,7 @@ int elf_validate(elf_header_t *eh) {
     return 1;
 }
 
-int elf_loader(char *name, process_t *proc) {
+int elf_loader(char *name, process_t *proc, char *arguments) {
     file f;
     
     struct page_directory *addr_space = create_address_space();
@@ -133,9 +133,32 @@ int elf_loader(char *name, process_t *proc) {
     
     // fill the stack
     uint32_t *stackp = (uint32_t *) proc->stack_limit;
-    *--stackp = (uint32_t) &end_proc; // the process needs to know where to return
+    
+    // arguments
+    uint32_t argc = 1;
+    char **argv = (char **) umalloc(strlen(name) + strlen(arguments), (vmm_addr_t *) heap);
+    strcpy(argv[0], name);
+    
+    while(*arguments) {
+        char *p = strchr(arguments, ' ');
+        if(p == NULL)
+            break;
+        int strl = strlen(arguments) - strlen(p);
+        strncpy(argv[argc], arguments, strl);
+        argc++;
+        while(strl > 0) {
+            arguments++;
+            strl--;
+        }
+        arguments++;
+    }
+    
+    *--stackp = (uint32_t) argv;
+    *--stackp = argc;
+
+    *--stackp = (uint32_t) &end_process; // the process needs to know where to return
     *--stackp = 0x23;                 // ss
-    *--stackp = proc->stack_limit - 4;// esp
+    *--stackp = proc->stack_limit - 12; // esp
     *--stackp = 0x202;                // eflags
     *--stackp = 0x1B;                 // cs
     *--stackp = proc->eip;            // eip

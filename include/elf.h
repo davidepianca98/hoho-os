@@ -92,7 +92,7 @@ typedef struct program_header {
 } __attribute__((__packed__)) program_header_t;
 
 int elf_validate(elf_header_t *eh);
-int elf_loader(char *name, process_t *proc);
+int elf_loader(char *name, process_t *proc, char *arguments);
 
 #endif
 

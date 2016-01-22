@@ -25,14 +25,14 @@
 
 static int pid = 2;
 
-int start_proc(char *name) {
+int start_proc(char *name, char *arguments) {
     process_t *proc = (process_t *) kmalloc(sizeof(process_t));
     strcpy(proc->name, name);
     proc->id = pid++;
     proc->priority = 1;
     proc->state = PROC_NEW;
 
-    if(!elf_loader(name, proc)) {
+    if(!elf_loader(name, proc, arguments)) {
         printk("Can't load the executable\n");
         proc->state = PROC_STOPPED;
         return 0;

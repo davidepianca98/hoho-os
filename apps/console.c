@@ -119,10 +119,13 @@ void console_exec(char *buf) {
             } else
                 printk("cd %s: directory not found\n", senddir);
         } else if(strncmp(buf, "start", 5) == 0) {
+            char *buf2 = kmalloc(128);
+            strcpy(buf2, buf + 6);
+            char *arg2 = strchr(buf2, ' ');
             strcpy(senddir, dir);
             strcat(senddir, "/");
-            strcat(senddir, arg);
-            int procn = start_proc(senddir);
+            strncpy(senddir + strlen(dir) + 1, buf2, strlen(buf2) - strlen(arg2));
+            int procn = start_proc(senddir, arg2 + 1);
             while(proc_state(procn) != PROC_STOPPED);
         } else if(strncmp(buf, "read", 4) == 0) {
             strcpy(senddir, dir);

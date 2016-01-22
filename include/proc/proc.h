@@ -57,7 +57,9 @@ typedef struct proc {
     struct proc *prec;
 } process_t;
 
-int start_proc(char *name);
+extern void end_process();
+
+int start_proc(char *name, char *arguments);
 void end_proc(int ret);
 int proc_state(int id);
 

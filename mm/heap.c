@@ -20,28 +20,27 @@
 #include <mm/paging.h>
 #include <drivers/video.h>
 
-heap_info_t *heap_info;
-
 void heap_init(vmm_addr_t *addr) {
-    heap_info = (heap_info_t *) addr;
+    heap_info_t *heap_info = (heap_info_t *) addr;
     heap_info->start = addr + sizeof(heap_info_t);
     heap_info->size = 4096;
     heap_info->used = sizeof(heap_header_t) + sizeof(heap_info_t);
-    heap_info->first_header = (heap_header_t *) addr;
+    heap_info->first_header = (heap_header_t *) addr + sizeof(heap_info_t);
     heap_info->first_header->magic = HEAP_MAGIC;
     heap_info->first_header->size = heap_info->size;
     heap_info->first_header->is_free = 1;
     heap_info->first_header->next = NULL;
 }
 
-void *umalloc(size_t len) {
-    void *ptr = first_free_usr(len);
+void *umalloc(size_t len, vmm_addr_t *heap) {
+    void *ptr = first_free_usr(len, heap);
     if(ptr)
         return ptr;
     return NULL;
 }
 
-void ufree(void *ptr) {
+void ufree(void *ptr, vmm_addr_t *heap) {
+    heap_info_t *heap_info = (heap_info_t *) heap;
     heap_header_t *head = ptr - sizeof(heap_header_t);
     if((head->is_free == 0) && (head->magic == HEAP_MAGIC)) {
         head->is_free = 1;
@@ -58,7 +57,8 @@ void ufree(void *ptr) {
     }
 }
 
-void *first_free_usr(size_t len) {
+void *first_free_usr(size_t len, vmm_addr_t *heap) {
+    heap_info_t *heap_info = (heap_info_t *) heap;
     heap_header_t *head = (heap_header_t *) heap_info->first_header;
     
     if(heap_info->used >= heap_info->size)
