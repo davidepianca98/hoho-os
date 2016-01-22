@@ -15,35 +15,39 @@
  */
 
 #include <hal/hal.h>
-#include <mm/heap.h>
+#include <mm/kheap.h>
 #include <mm/mm.h>
 #include <mm/paging.h>
 #include <drivers/video.h>
 
+#define HEAP_SIZE 1024 // 1024 pages, 1024 * 4 KB = 4 MB
+#define HEAP_START (0xC0000000 + &kernel_end + 4096)
+
 heap_info_t heap_info;
 
-void heap_init(vmm_addr_t *addr) {
-    heap_info.start = addr;
-    heap_info.size = 4096;
+void kheap_init() {
+    heap_info.start = (vmm_addr_t *) HEAP_START;
+    heap_info.size = HEAP_SIZE * BLOCKS_LEN;
     heap_info.used = sizeof(heap_header_t);
-    heap_info.first_header = (heap_header_t *) addr;
+    heap_info.first_header = (heap_header_t *) HEAP_START;
     heap_info.first_header->magic = HEAP_MAGIC;
     heap_info.first_header->size = heap_info.size;
     heap_info.first_header->is_free = 1;
     heap_info.first_header->next = NULL;
 }
 
-void *umalloc(size_t len) {
-    void *ptr = first_free_usr(len);
+void *kmalloc(size_t len) {
+    void *ptr = first_free(len);
     if(ptr)
         return ptr;
     return NULL;
 }
 
-void ufree(void *ptr) {
+void kfree(void *ptr) {
     heap_header_t *head = ptr - sizeof(heap_header_t);
     if((head->is_free == 0) && (head->magic == HEAP_MAGIC)) {
         head->is_free = 1;
+        //print_header(head);
         heap_info.used -= head->size;
         
         // merge contiguous free sections
@@ -57,7 +61,7 @@ void ufree(void *ptr) {
     }
 }
 
-void *first_free_usr(size_t len) {
+void *first_free(size_t len) {
     heap_header_t *head = (heap_header_t *) heap_info.first_header;
     
     if(heap_info.used >= heap_info.size)
@@ -73,11 +77,24 @@ void *first_free_usr(size_t len) {
             head2->next = NULL;
             head->next = head2;
             head->size = len;
+            //print_header(head);
             heap_info.used += len + sizeof(heap_header_t);
             return (void *) head + sizeof(heap_header_t);
         }
         head = head->next;
     }
     return NULL;
+}
+
+int get_heap_size() {
+    return heap_info.size;
+}
+
+int get_used_heap() {
+    return heap_info.used;
+}
+
+void print_header(heap_header_t *head) {
+    printk("Size: %d Is free: %d Next: %x\n", head->size, head->is_free, head->next);
 }
 

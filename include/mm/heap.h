@@ -17,10 +17,10 @@
 #ifndef HEAP_H
 #define HEAP_H
 
+#define HEAP_MAGIC      0xA0B0C0
+
 #include <types.h>
 #include <mm/paging.h>
-
-#define HEAP_MAGIC      0xA0B0C0
 
 typedef struct heap_header {
     int magic; // sanity check: 0xA0B0C0
@@ -36,16 +36,10 @@ typedef struct {
     heap_header_t *first_header;
 } heap_info_t;
 
-void kheap_init();
-void *kmalloc(size_t len);
-void kfree(void *ptr);
-
-void *first_free(size_t len);
-
-int get_heap_size();
-int get_used_heap();
-
-void print_header(heap_header_t *head);
+void heap_init(vmm_addr_t *addr);
+void *umalloc(size_t len);
+void ufree(void *ptr);
+void *first_free_usr(size_t len);
 
 #endif
 

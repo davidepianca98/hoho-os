@@ -120,6 +120,15 @@ int elf_loader(char *name, process_t *proc) {
     proc->esp = (uint32_t) stack;
     proc->stack_limit = ((uint32_t) proc->esp + 4096);
     
+    // build the heap
+    void *heap = (void *) proc->stack_limit;
+    void *heap_phys = (void *) pmm_malloc();
+    
+    vmm_map_phys(proc->pdir, (uint32_t) heap, (uint32_t) heap_phys, PAGE_PRESENT_FLAG | PAGE_RW_FLAG | PAGE_MODE_FLAG);
+    
+    proc->heap_limit = ((uint32_t) heap + 4096);
+    
+    // fill the stack
     uint32_t *stackp = (uint32_t *) proc->stack_limit;
     *--stackp = (uint32_t) &end_proc; // the process needs to know where to return
     *--stackp = 0x23;                 // ss

@@ -57,10 +57,13 @@ void end_proc(int ret) {
     
     cur->state = PROC_STOPPED;
     
-    void *stack = get_phys_addr(cur->pdir, (uint32_t) cur->esp);
-    
-    vmm_unmap_phys_addr(cur->pdir, (uint32_t) cur->esp);
+    void *stack = get_phys_addr(cur->pdir, cur->esp);
+    vmm_unmap_phys_addr(cur->pdir, cur->esp);
     pmm_free(stack);
+    
+    void *heap = get_phys_addr(cur->pdir, cur->stack_limit);
+    vmm_unmap_phys_addr(cur->pdir, cur->stack_limit);
+    pmm_free(heap);
     
     for(uint32_t page = 0; page < cur->image_size / PAGE_SIZE; page++) {
         uint32_t virt = cur->image_base + (page * PAGE_SIZE);
