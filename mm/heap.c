@@ -20,17 +20,18 @@
 #include <mm/paging.h>
 #include <drivers/video.h>
 
-heap_info_t heap_info;
+heap_info_t *heap_info;
 
 void heap_init(vmm_addr_t *addr) {
-    heap_info.start = addr;
-    heap_info.size = 4096;
-    heap_info.used = sizeof(heap_header_t);
-    heap_info.first_header = (heap_header_t *) addr;
-    heap_info.first_header->magic = HEAP_MAGIC;
-    heap_info.first_header->size = heap_info.size;
-    heap_info.first_header->is_free = 1;
-    heap_info.first_header->next = NULL;
+    heap_info = (heap_info_t *) addr;
+    heap_info->start = addr + sizeof(heap_info_t);
+    heap_info->size = 4096;
+    heap_info->used = sizeof(heap_header_t) + sizeof(heap_info_t);
+    heap_info->first_header = (heap_header_t *) addr;
+    heap_info->first_header->magic = HEAP_MAGIC;
+    heap_info->first_header->size = heap_info->size;
+    heap_info->first_header->is_free = 1;
+    heap_info->first_header->next = NULL;
 }
 
 void *umalloc(size_t len) {
@@ -44,7 +45,7 @@ void ufree(void *ptr) {
     heap_header_t *head = ptr - sizeof(heap_header_t);
     if((head->is_free == 0) && (head->magic == HEAP_MAGIC)) {
         head->is_free = 1;
-        heap_info.used -= head->size;
+        heap_info->used -= head->size;
         
         // merge contiguous free sections
         heap_header_t *app = head->next;
@@ -58,9 +59,9 @@ void ufree(void *ptr) {
 }
 
 void *first_free_usr(size_t len) {
-    heap_header_t *head = (heap_header_t *) heap_info.first_header;
+    heap_header_t *head = (heap_header_t *) heap_info->first_header;
     
-    if(heap_info.used >= heap_info.size)
+    if(heap_info->used >= heap_info->size)
         return NULL;
     
     while(head != NULL) {
@@ -73,7 +74,7 @@ void *first_free_usr(size_t len) {
             head2->next = NULL;
             head->next = head2;
             head->size = len;
-            heap_info.used += len + sizeof(heap_header_t);
+            heap_info->used += len + sizeof(heap_header_t);
             return (void *) head + sizeof(heap_header_t);
         }
         head = head->next;

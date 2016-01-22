@@ -49,6 +49,7 @@ typedef struct proc {
     uint32_t eip;
     uint32_t esp;
     uint32_t stack_limit;
+    uint32_t heap;
     uint32_t heap_limit;
     uint32_t image_base;
     uint32_t image_size;

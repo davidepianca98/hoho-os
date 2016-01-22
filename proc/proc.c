@@ -61,8 +61,8 @@ void end_proc(int ret) {
     vmm_unmap_phys_addr(cur->pdir, cur->esp);
     pmm_free(stack);
     
-    void *heap = get_phys_addr(cur->pdir, cur->stack_limit);
-    vmm_unmap_phys_addr(cur->pdir, cur->stack_limit);
+    void *heap = get_phys_addr(cur->pdir, cur->heap);
+    vmm_unmap_phys_addr(cur->pdir, cur->heap);
     pmm_free(heap);
     
     for(uint32_t page = 0; page < cur->image_size / PAGE_SIZE; page++) {
