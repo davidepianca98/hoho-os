@@ -11,3 +11,4 @@ TODO:
 - remove zombie processes
 - better keyboard drivers
 - pci
+- better syscall_disp

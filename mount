@@ -21,6 +21,8 @@ sudo rm /mnt/proc
 sudo cp apps/example/proc /mnt/proc
 sudo rm /mnt/editor
 sudo cp apps/editor/editor /mnt/editor
+sudo rm /mnt/mproc
+sudo cp apps/multiprocessing/mproc /mnt/mproc
 sudo umount /mnt
 sudo losetup -d /dev/loop4
 

@@ -135,9 +135,6 @@ void floppy_read_sector_imp(uint8_t head, uint8_t track, uint8_t sector) {
         floppy_read_data();
     floppy_check_int(&st0, &cyl);
     
-    if(st0 & 0xC0) {
-        printk("floppy_read_sector: status = %s\n", status[st0 >> 6]);
-    }
     if(st0 & 0x08) {
         printk("floppy_read_sector: drive not ready\n");
     }

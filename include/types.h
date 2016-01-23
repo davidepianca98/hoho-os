@@ -31,6 +31,8 @@ typedef signed long long int64_t;
 
 typedef unsigned int size_t;
 
+typedef int pid_t;
+
 typedef char * va_list;
 
 #define va_rounded_size(type) (((sizeof(type) + sizeof(int) - 1) / sizeof(int)) * sizeof(int))

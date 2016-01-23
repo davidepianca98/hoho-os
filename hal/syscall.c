@@ -19,23 +19,29 @@
 #include <proc/proc.h>
 #include <drivers/keyboard.h>
 
-#define MAX_SYSCALL 3
+#define MAX_SYSCALL 5
 
 static void *syscalls[] = {
     &printk,
     &gets,
-    &clear
+    &clear,
+    &start_thread,
+    &stop_thread
 };
 
 void syscall_init() {
     install_ir(0x72, 0x80 | 0x0E | 0x60, 0x8, &syscall_disp);
 }
 
-void syscall_disp() {
-    int index = 0;
+int syscall_disp() {
+    int index = 0, ret = 0;
     asm volatile("mov %%eax, %0" : "=r" (index));
+    
     if(index >= MAX_SYSCALL)
-        return;
+        return 0;
+    if(index == 3) {
+        asm volatile("mov -8(%esp), %ebx");
+    }
     void *func = syscalls[index];
     asm volatile("push %%edi; \
                   push %%esi; \
@@ -49,5 +55,7 @@ void syscall_disp() {
                   pop %%ebx;  \
                   pop %%ebx;  \
                   sti" : : "r" (func));
+    asm volatile("mov %%eax, %0" : "=r" (ret));
+    return ret;
 }
 

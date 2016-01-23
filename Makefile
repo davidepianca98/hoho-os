@@ -17,6 +17,7 @@ all:
 	
 	cd apps/example; make
 	cd apps/editor; make
+	cd apps/multiprocessing; make
 
 	$(CC) $(CFLAGS) main.c
 	$(LD) $(LDFLAGS) -o kernel.bin \

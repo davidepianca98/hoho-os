@@ -14,13 +14,17 @@
  *  limitations under the License.
  */
 
-#ifndef SYSCALL_H
-#define SYSCALL_H
+#ifndef UNISTD_H
+#define UNISTD_H
 
-#include <drivers/video.h>
+#include "../types.h"
 
-void syscall_init();
-int syscall_disp();
+pid_t fork();
+void exit(int code);
+pid_t wait(int *x);
+//pid_t wait(pid_t proc, int *x, int code);
+pid_t getpid();
+pid_t getppid();
 
 #endif
 

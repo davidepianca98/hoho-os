@@ -31,8 +31,12 @@ process_t *get_cur_proc() {
 process_t *get_proc_by_id(int id) {
     process_t *app = list;
     for(int i = 0; i < n_proc; i++) {
-        if(app->id == id) {
-            return app;
+        thread_t *thr_app = app->thread_list;
+        for(int j = 0; j < app->threads; j++) {
+            if(thr_app->pid == id) {
+                return app;
+            }
+            thr_app = thr_app->next;
         }
         app = app->next;
     }
@@ -44,14 +48,23 @@ void main_proc() {
 }
 
 uint32_t schedule(uint32_t esp) {
+    // scheduling off, no need to switch context
     if(get_sched_state() == 0)
         return esp;
-    list->esp = esp;
+        
+    // save the stack pointer
+    list->thread_list->esp = esp;
+    
+    // change thread for the next run
+    list->thread_list = list->thread_list->next;
+    
     do {
+        // change process, make sure it's not a finished one
         list = list->next;
     } while(list->state == PROC_STOPPED);
     change_page_directory(list->pdir);
-    return list->esp;
+    
+    return list->thread_list->esp;
 }
 
 void sched_add_proc(process_t *proc) {
@@ -64,20 +77,9 @@ void sched_add_proc(process_t *proc) {
     sched_state(1);
 }
 
-void sched_set_null_proc(int id) {
-    process_t *app = list;
-    for(int i = 0; i < n_proc; i++) {
-        if(app->id == id) {
-            app->state = PROC_STOPPED;
-            break;
-        }
-        app = app->next;
-    }
-}
-
 void sched_remove_proc(int id) {
     process_t *app = get_proc_by_id(id);
-    if(app->id == id) {
+    if(app != NULL) {
         app->prec->next = app->next;
         app->next->prec = app->prec;
         n_proc--;
@@ -89,43 +91,48 @@ void sched_remove_proc(int id) {
 void sched_init() {
     process_t *proc = (process_t *) kmalloc(sizeof(process_t));
     strcpy(proc->name, "console");
-    proc->id = 1;
-    proc->priority = 1;
-    proc->state = PROC_ACTIVE;
+    thread_t *main_thread = (thread_t *) kmalloc(sizeof(thread_t));
+    proc->thread_list = main_thread;
+    main_thread->next = main_thread;
+    main_thread->prec = main_thread;
+    main_thread->pid = 1;
+    main_thread->main = 1;
+    main_thread->state = PROC_ACTIVE;
     proc->pdir = get_kern_directory();
-    proc->eip = (uint32_t) &main_proc;
+    main_thread->eip = (uint32_t) &main_proc;
     void *stack = (void *) pmm_malloc();
     
     vmm_map_phys(proc->pdir, (uint32_t) stack, (uint32_t) stack, PAGE_PRESENT_FLAG | PAGE_RW_FLAG | PAGE_MODE_FLAG);
 
-    proc->esp = (uint32_t) stack;
-    proc->stack_limit = ((uint32_t) proc->esp + 4096);
+    main_thread->esp = (uint32_t) stack;
+    main_thread->stack_limit = ((uint32_t) main_thread->esp + 4096);
     
-    uint32_t *stackp = (uint32_t *) proc->stack_limit;
+    uint32_t *stackp = (uint32_t *) main_thread->stack_limit;
     *--stackp = 0x202;                // eflags
     *--stackp = 0x8;                  // cs
-    *--stackp = proc->eip;            // eip
+    *--stackp = main_thread->eip;     // eip
     *--stackp = 0;                    // eax
     *--stackp = 0;                    // ebx
     *--stackp = 0;                    // ecx
     *--stackp = 0;                    // edx
     *--stackp = 0;                    // esi
     *--stackp = 0;                    // edi
-    *--stackp = proc->esp + 4096;     // ebp
+    *--stackp = main_thread->esp + 4096; // ebp
     *--stackp = 0x10;                 // ds
     *--stackp = 0x10;                 // es
     *--stackp = 0x10;                 // fs
     *--stackp = 0x10;                 // gs
-    proc->esp = (uint32_t) stackp;
+    main_thread->esp = (uint32_t) stackp;
     
     proc->next = proc;
     proc->prec = proc;
+    proc->state = PROC_ACTIVE;
     list = proc;
     sched_state(1);
     disable_int();
     change_page_directory(proc->pdir);
     
-    asm volatile("mov %%eax, %%esp" : : "a" (proc->esp));
+    asm volatile("mov %%eax, %%esp" : : "a" (main_thread->esp));
     asm volatile("pop %gs;          \
                   pop %fs;          \
                   pop %es;          \
@@ -147,8 +154,8 @@ int get_nproc() {
 void print_procs() {
     process_t *app = list;
     for(int i = 0; i < n_proc; i++) {
-        printk("Name: %s id: %d priority: %d page directory: 0x%x state: %d\n", app->name, app->id, app->priority, app->pdir, app->state);
-        printk("    eip: 0x%x esp: 0x%x stack limit: 0x%x\nimage base: 0x%x image size: %x\n\n", app->eip, app->esp, app->stack_limit, app->image_base, app->image_size);
+        printk("Name: %s id: %d page directory: 0x%x state: %d\n", app->name, app->thread_list->pid, app->pdir, app->state);
+        printk("    eip: 0x%x esp: 0x%x stack limit: 0x%x\nimage base: 0x%x image size: %x\n\n", app->thread_list->eip, app->thread_list->esp, app->thread_list->stack_limit, app->thread_list->image_base, app->thread_list->image_size);
         app = app->next;
     }
 }
