@@ -22,7 +22,7 @@
 #define FAT12_SYSTEM_ID             0x1
 #define FAT16_SYSTEM_ID             0x4
 #define NTFS_SYSTEM_ID              0x7
-#define FAT32_SYSTEM_ID             0xB
+#define FAT32_SYSTEM_ID             0xC //0xB
 
 // 16 bytes
 typedef struct partition {

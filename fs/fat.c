@@ -17,6 +17,7 @@
 #include <hal/hal.h>
 #include <fs/fat.h>
 #include <fs/fat_mount.h>
+#include <fs/mbr.h>
 #include <drivers/video.h>
 
 #define SECTOR_SIZE 512
@@ -26,9 +27,26 @@ extern uint32_t *dma_buffer;
 uint8_t FAT[SECTOR_SIZE * 2];
 
 void fat_mount(device_t *dev) {
+    // Trying with bootsector
     bootsector_t *bs = (bootsector_t *) dev->read(0);
-    if((bs->ignore[0] != 0xEB) || (bs->ignore[2] != 0x90)) // not a FAT fs
+    if((bs->ignore[0] != 0xEB) || (bs->ignore[2] != 0x90)) // Not a FAT fs
         return;
+    
+    // Scan for partitions
+    mbr_t *mbr = (mbr_t *) bs;
+    for(int i = 0; i < 4; i++) {
+        if(mbr->partition_table[i].sys_id != FAT32_SYSTEM_ID) {
+            continue;
+        } else {
+            uint32_t lba = mbr->partition_table[i].lba_start;
+            uint32_t totsec = mbr->partition_table[i].total_sectors;
+            //printk("lba: %d sects: %d\n", lba, totsec);
+            //bs = (bootsector_t *) dev->read(lba);
+            break;
+        }
+        return;
+    }
+        
     dev->minfo.n_sectors = (bs->bpb.n_sectors == 0) ? bs->bpb.long_sectors : bs->bpb.n_sectors;
     dev->minfo.fat_offset = bs->bpb.reserved_sectors;
     dev->minfo.fat_size = (bs->bpb.fat_sectors == 0) ? bs->bpb_ext.fat_sectors : bs->bpb.fat_sectors;
@@ -48,9 +66,11 @@ void fat_mount(device_t *dev) {
         dev->minfo.type = FAT32;
     else
         dev->minfo.type = EXFAT;
+    
+    //printk("FAT type: %d\n", dev->minfo.type);
     //printk("%x %x %x\n", bs->ignore[0], bs->ignore[1], bs->ignore[2]);
     //printk("sect bytes: %d clus sect: %d res sect: %d n fats: %d\n n dir entr: %d n sect: %d media: %d fat sect: %d\n", bs->bpb.sector_bytes, bs->bpb.cluster_sectors, bs->bpb.reserved_sectors, bs->bpb.n_fats, bs->bpb.n_dir_entries, bs->bpb.n_sectors, bs->bpb.media, bs->bpb.fat_sectors);
-    //printk("n secs:%d fat offs:%d fat size:%d fat en size:%d\nn root en:%d root offs:%d root size:%d first data: %d\n", dev->minfo.n_sectors, dev->minfo.fat_offset, dev->minfo.fat_size, dev->minfo.fat_entry_size, dev->minfo.n_root_entries, dev->minfo.root_offset, dev->minfo.root_size, dev->minfo.first_data_sector);
+    //printk("n secs:%d fat offs:%d fat size:%d fat en size:%d\nn root en:%d root offs:%d root size:%d first data: %d data secs: %d\n", dev->minfo.n_sectors, dev->minfo.fat_offset, dev->minfo.fat_size, dev->minfo.fat_entry_size, dev->minfo.n_root_entries, dev->minfo.root_offset, dev->minfo.root_size, dev->minfo.first_data_sector, dev->minfo.data_sectors);
 }
 
 void to_dos_file_name(char *name, char *str, int len) {

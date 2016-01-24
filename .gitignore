@@ -43,4 +43,5 @@
 *.img
 *.iso
 iso/*
+*.vdi
 

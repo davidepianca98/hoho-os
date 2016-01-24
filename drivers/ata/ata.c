@@ -135,12 +135,13 @@ void identify(drive_t *drive) {
 }
 
 void delay_400ns() {
-    
+    for(int i = 0; i < 4; i++)
+        inportb(ata_info.cur_hdd.status_reg);
 }
 
 char *ata_read_sector(int lba) {
     char *buf = (char *) kmalloc(512);
-    outportb(ata_info.cur_hdd.sel_reg, 0xE0 | (ata_info.cur_hdd.type << 4) | ((lba >> 24) & 0x0F));
+    outportb(ata_info.cur_hdd.sel_reg, 0xE0 | ((lba >> 24) & 0x0F)); // maybe or with (ata_info.cur_hdd.type << 4)
     outportb(ata_info.cur_hdd.err_reg, 0x00);
     outportb(ata_info.cur_hdd.sectors_reg, (uint8_t) 1);
     outportb(ata_info.cur_hdd.lba_low_reg, (uint8_t) lba);
@@ -148,14 +149,15 @@ char *ata_read_sector(int lba) {
     outportb(ata_info.cur_hdd.lba_high_reg, (uint8_t) (lba >> 16));
     outportb(ata_info.cur_hdd.status_reg, 0x20);
     //ata_wait_for_irq();
+    delay_400ns();
+    
+    while(!(inportb(ata_info.cur_hdd.data_reg) & 0x08));
     
     for(int i = 0; i < 256; i++) {
         uint16_t tmp = inportw(ata_info.cur_hdd.data_reg);
-        buf[i * 2] = (char) tmp;
-        buf[i * 2 + 1] = (char) (tmp >> 8);
+        *(uint16_t *) (buf + i * 2) = tmp;
     }
     delay_400ns();
-    kfree(buf);
     return buf;
 }
 
