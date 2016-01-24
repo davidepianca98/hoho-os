@@ -40,7 +40,7 @@ run:
 	VBoxManage startvm Hoho
 
 qemu:
-	qemu-system-i386 -d in_asm -hda disc.vdi -fda floppy.img -kernel kernel.bin
+	qemu-system-i386 -d in_asm -fda floppy.img -kernel kernel.bin
 	#qemu-system-i386 -s -S -hda disc.vdi -fda floppy.img -kernel kernel.bin
 
 clean:

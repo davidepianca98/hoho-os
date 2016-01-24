@@ -20,6 +20,7 @@
 #include <hal/hal.h>
 #include <lib/string.h>
 #include <drivers/io.h>
+#include <panic.h>
 
 process_t *list;
 static int n_proc = 1;
@@ -51,6 +52,11 @@ uint32_t schedule(uint32_t esp) {
     // scheduling off, no need to switch context
     if(get_sched_state() == 0)
         return esp;
+    
+    if(list != list->thread_list->parent) {
+        printk("Something wrong\n");
+        panic();
+    }
         
     // save the stack pointer
     list->thread_list->esp = esp;
@@ -98,6 +104,7 @@ void sched_init() {
     main_thread->pid = 1;
     main_thread->main = 1;
     main_thread->state = PROC_ACTIVE;
+    main_thread->parent = (void *) proc;
     proc->pdir = get_kern_directory();
     main_thread->eip = (uint32_t) &main_proc;
     void *stack = (void *) pmm_malloc();
@@ -128,8 +135,8 @@ void sched_init() {
     proc->prec = proc;
     proc->state = PROC_ACTIVE;
     list = proc;
-    sched_state(1);
     disable_int();
+    sched_state(1);
     change_page_directory(proc->pdir);
     
     asm volatile("mov %%eax, %%esp" : : "a" (main_thread->esp));

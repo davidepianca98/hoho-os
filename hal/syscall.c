@@ -34,7 +34,7 @@ void syscall_init() {
 }
 
 int syscall_disp() {
-    int index = 0, ret = 0;
+    int index = 0, ret = -1;
     asm volatile("mov %%eax, %0" : "=r" (index));
     
     if(index >= MAX_SYSCALL)

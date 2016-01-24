@@ -66,6 +66,7 @@ typedef struct thread {
     pid_t pid;
     int main;
     int state;
+    void *parent;
     uint32_t eip;
     uint32_t esp;
     uint32_t stack_limit;

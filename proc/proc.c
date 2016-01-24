@@ -41,6 +41,7 @@ int start_proc(char *name, char *arguments) {
     if(proc->thread_list == NULL)
         return PROC_STOPPED;
     proc->thread_list->main = 1;
+    proc->thread_list->parent = (void *) proc;
 
     if(load_elf(name, proc->thread_list, proc->pdir) == -1) {
         sched_state(1);
@@ -219,6 +220,7 @@ int start_thread(uint32_t eip) {
     // Copy executable info
     thread->image_base = cur->thread_list->image_base;
     thread->image_size = cur->thread_list->image_size;
+    thread->parent = (void *) cur;
     
     if(!build_stack(thread, cur->pdir, cur->threads))
         return -1;
@@ -256,8 +258,8 @@ int start_thread(uint32_t eip) {
     cur->thread_list->next = thread;
     
     thread->state = PROC_ACTIVE;
-
-    return 0;
+    sched_state(1);
+    return 1;
 }
 
 void stop_thread(int code) {
@@ -297,6 +299,7 @@ void stop_thread(int code) {
     pmm_free(phys);
     
     sched_state(1);
+    enable_int();
 }
 
 void end_proc(int ret) {
@@ -306,6 +309,7 @@ void end_proc(int ret) {
     if(cur == NULL) {
         printk("Process not found\n");
         sched_state(1);
+        enable_int();
         return;
     }
     
@@ -337,6 +341,7 @@ void end_proc(int ret) {
 	}
 	//sched_remove_proc(cur->id);
     sched_state(1);
+    enable_int();
     while(1);
 }
 

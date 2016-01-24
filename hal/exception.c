@@ -87,9 +87,12 @@ void ex_stack_fault() {
 }
 
 void ex_gpf(struct regs_error *re) {
-    printk("General protection fault\nError code: %b\n\n", re->error);
+    printk("\n\nGeneral protection fault\nError code: %b\n\n", re->error);
     printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
-    panic();
+    if(re->es == 0x10)
+        panic();
+    else
+        stop_thread(1);
 }
 
 void ex_page_fault() {
