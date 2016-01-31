@@ -49,17 +49,13 @@ void main_proc() {
 }
 
 uint32_t schedule(uint32_t esp) {
-    // scheduling off, no need to switch context
-    if(get_sched_state() == 0)
-        return esp;
-    
     if(list != list->thread_list->parent) {
         printk("Something wrong\n");
         panic();
     }
         
     // save the stack pointer
-    list->thread_list->esp = esp;
+    list->thread_list->esp_kernel = esp;
     
     // change thread for the next run
     list->thread_list = list->thread_list->next;
@@ -68,9 +64,10 @@ uint32_t schedule(uint32_t esp) {
         // change process, make sure it's not a finished one
         list = list->next;
     } while(list->state == PROC_STOPPED);
+    set_esp0(list->thread_list->stack_kernel_limit);
     change_page_directory(list->pdir);
     
-    return list->thread_list->esp;
+    return list->thread_list->esp_kernel;
 }
 
 void sched_add_proc(process_t *proc) {
@@ -99,6 +96,7 @@ void sched_init() {
     strcpy(proc->name, "console");
     thread_t *main_thread = (thread_t *) kmalloc(sizeof(thread_t));
     proc->thread_list = main_thread;
+    proc->threads = 1;
     main_thread->next = main_thread;
     main_thread->prec = main_thread;
     main_thread->pid = 1;
@@ -109,27 +107,36 @@ void sched_init() {
     main_thread->eip = (uint32_t) &main_proc;
     void *stack = (void *) pmm_malloc();
     
-    vmm_map_phys(proc->pdir, (uint32_t) stack, (uint32_t) stack, PAGE_PRESENT_FLAG | PAGE_RW_FLAG | PAGE_MODE_FLAG);
+    vmm_map_phys(proc->pdir, (uint32_t) stack, (uint32_t) stack, PAGE_PRESENT | PAGE_RW | PAGE_USER);
 
     main_thread->esp = (uint32_t) stack;
-    main_thread->stack_limit = ((uint32_t) main_thread->esp + 4096);
+    main_thread->stack_limit = ((uint32_t) main_thread->esp + PAGE_SIZE);
+    
+    stack = (void *) pmm_malloc();
+    
+    main_thread->esp_kernel = main_thread->stack_limit;
+    main_thread->stack_kernel_limit = main_thread->esp_kernel + PAGE_SIZE;
+    
+    vmm_map_phys(proc->pdir, main_thread->esp_kernel, (uint32_t) stack, PAGE_PRESENT | PAGE_RW | PAGE_USER);
     
     uint32_t *stackp = (uint32_t *) main_thread->stack_limit;
-    *--stackp = 0x202;                // eflags
-    *--stackp = 0x8;                  // cs
-    *--stackp = main_thread->eip;     // eip
-    *--stackp = 0;                    // eax
-    *--stackp = 0;                    // ebx
-    *--stackp = 0;                    // ecx
-    *--stackp = 0;                    // edx
-    *--stackp = 0;                    // esi
-    *--stackp = 0;                    // edi
-    *--stackp = main_thread->esp + 4096; // ebp
-    *--stackp = 0x10;                 // ds
-    *--stackp = 0x10;                 // es
-    *--stackp = 0x10;                 // fs
-    *--stackp = 0x10;                 // gs
+    *--stackp = 0x202;                    // eflags
+    *--stackp = 0x8;                      // cs
+    *--stackp = main_thread->eip;         // eip
+    *--stackp = 0;                        // eax
+    *--stackp = 0;                        // ebx
+    *--stackp = 0;                        // ecx
+    *--stackp = 0;                        // edx
+    *--stackp = 0;                        // esi
+    *--stackp = 0;                        // edi
+    *--stackp = main_thread->stack_limit; // ebp
+    *--stackp = 0x10;                     // ds
+    *--stackp = 0x10;                     // es
+    *--stackp = 0x10;                     // fs
+    *--stackp = 0x10;                     // gs
     main_thread->esp = (uint32_t) stackp;
+    
+    main_thread->esp_kernel = (uint32_t) stackp;
     
     proc->next = proc;
     proc->prec = proc;
@@ -138,6 +145,7 @@ void sched_init() {
     disable_int();
     sched_state(1);
     change_page_directory(proc->pdir);
+    set_esp0(main_thread->stack_kernel_limit);
     
     asm volatile("mov %%eax, %%esp" : : "a" (main_thread->esp));
     asm volatile("pop %gs;          \

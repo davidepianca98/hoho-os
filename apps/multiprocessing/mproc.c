@@ -1,17 +1,18 @@
 #include <stdio.h>
 #include <unistd.h>
-/*
+
 int main() {
     pid_t pid;
     pid = fork();
     if(pid == 0) {
         printf("Siamo nel figlio\n");
         exit(0);
-    } else
+    } else {
         printf("BOH: %x\n", pid);
+    }
     return 0;
-}*/
-
+}
+/*
 int main() {
     pid_t pid;
     int sema = 0;
@@ -42,5 +43,5 @@ int main() {
         }
     }
     return 0;
-}
+}*/
 

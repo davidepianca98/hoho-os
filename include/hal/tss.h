@@ -44,13 +44,13 @@ typedef struct tss {
     uint32_t ds;
     uint32_t fs;
     uint32_t gs;
-    uint32_t ldt;
-    uint16_t trap;
+    uint32_t ldtr;
     uint16_t iomap;
 } __attribute__((__packed__)) tss_t;
 
 void flush_tss();
 void install_tss();
+void set_esp0(uint32_t esp);
 
 #endif
 

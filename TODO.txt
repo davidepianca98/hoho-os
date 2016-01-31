@@ -3,7 +3,6 @@ TODO:
 - fat touch
 - fat delete
 - partitions
-- ata read
 - ata write
 - test fat32 and fat16
 - ntfs
@@ -11,4 +10,4 @@ TODO:
 - remove zombie processes
 - better keyboard drivers
 - pci
-- better syscall_disp
+- unify exceptions

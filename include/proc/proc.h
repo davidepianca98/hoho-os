@@ -20,6 +20,7 @@
 #include <hal/tss.h>
 #include <mm/memory.h>
 #include <types.h>
+#include <proc/thread.h>
 
 #define PROC_NULL       -1
 
@@ -62,26 +63,10 @@ struct regs_error {
     uint32_t cs;
 };
 
-typedef struct thread {
-    pid_t pid;
-    int main;
-    int state;
-    void *parent;
-    uint32_t eip;
-    uint32_t esp;
-    uint32_t stack_limit;
-    uint32_t heap;
-    uint32_t heap_limit;
-    uint32_t image_base;
-    uint32_t image_size;
-    struct thread *next;
-    struct thread *prec;
-} thread_t;
-
 typedef struct proc {
     char name[16];
     int state;
-    struct page_directory *pdir;
+    page_dir_t *pdir;
     int threads;
     thread_t *thread_list;
     struct proc *next;
@@ -91,12 +76,10 @@ typedef struct proc {
 extern void end_process();
 
 int start_proc(char *name, char *arguments);
-thread_t *create_thread();
-int load_elf(char *name, thread_t *thread, struct page_directory *pdir);
-int build_stack(thread_t *thread, struct page_directory *pdir, int nthreads);
-int build_heap(thread_t *thread, struct page_directory *pdir, int nthreads);
-int start_thread(uint32_t eip);
-void stop_thread(int code);
+int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads);
+int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uint32_t *argv1);
+int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv);
+int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads);
 void end_proc(int ret);
 int proc_state(int id);
 

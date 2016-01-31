@@ -9,5 +9,5 @@ all:
 	$(AS) $(ASFLAGS) idt_asm.o idt.asm
 	$(CC) $(CFLAGS) panic.c
 	$(CC) $(CFLAGS) syscall.c
-	$(CC) $(CFLAGS) usermode.c
+	$(CC) $(CFLAGS) tss.c
 

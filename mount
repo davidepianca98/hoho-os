@@ -38,5 +38,6 @@ sudo cp apps/multiprocessing/mproc /mnt/mproc
 sudo umount /mnt
 sudo losetup -d /dev/loop4
 
+rm hdd.vdi
 VBoxManage convertfromraw --format VDI hdd.img hdd.vdi
 

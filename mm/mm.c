@@ -35,11 +35,6 @@ void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr) {
         
         if(i > 0 && mm_reg[i].addr_low == 0)
             break;
-        
-        /*printk("Region %d: Start: 0x%x%x Length (bytes): 0x%x%x Type: %d\n", i, 
-			mm_reg[i].addr_high, mm_reg[i].addr_low,
-			mm_reg[i].len_high, mm_reg[i].len_low,
-	    	mm_reg[i].type);*/
 	   
         if(mm_reg[i].type == 1)
             pmm_init_reg(mm_reg[i].addr_low, mm_reg[i].len_low);
@@ -59,23 +54,16 @@ void pmm_set_bit(int bit) {
 }
 
 void pmm_unset_bit(int bit) {
-    //if((bit < 0) || ((uint32_t) bit > pmm.max_blocks))
-    //    return;
     pmm.map[bit / 32] &= ~(1 << (bit % 32));
 }
 
 int pmm_get_bit(int bit) {
-    //if((bit < 0) || ((uint32_t) bit > pmm.max_blocks))
-    //    return -1;
     return pmm.map[bit / 32] & 1 << (bit % 32);
 }
 
 int pmm_first_free() {
     uint32_t i;
     int j;
-    
-    //if(pmm.used_blocks >= pmm.max_blocks)
-        //return -1;
     
     for(i = 0; i < pmm.max_blocks / 32; i++) {
         if(pmm.map[i] != BYTE_SET) {
@@ -92,10 +80,6 @@ int pmm_first_free() {
 int pmm_first_free_contig(int n) {
     uint32_t i;
     int j, temp, free;
-    
-    
-    //if(pmm.used_blocks >= pmm.max_blocks)
-        //return -1;
     
     if(n <= 0)
         return -1;
@@ -183,9 +167,10 @@ uint32_t get_max_blocks() {
 }
 
 void enable_paging() {
-    asm volatile("mov %cr0, %eax; \
-                  or %eax, 0x80000000; \
-                  mov %eax, %cr0");
+    uint32_t cr0;
+    asm volatile("mov %%cr0, %0" : "=r" (cr0));
+    cr0 |= 0x80000000;
+    asm volatile("mov %0, %%cr0" : : "r" (cr0));
 }
 
 void load_pdbr(mm_addr_t addr) {

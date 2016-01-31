@@ -31,7 +31,6 @@ extern ex_invalid_opcode
 
 global invop_handle
 invop_handle:
-    pop eax
     pusha
     push gs
     push fs
@@ -40,5 +39,18 @@ invop_handle:
     push eax
     push esp
     call ex_invalid_opcode
+    ret
+
+extern ex_page_fault
+
+global pf_handle
+pf_handle:
+    pusha
+    push gs
+    push fs
+    push es
+    push ds
+    push esp
+    call ex_page_fault
     ret
 

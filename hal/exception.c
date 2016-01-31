@@ -18,6 +18,7 @@
 #include <panic.h>
 #include <drivers/video.h>
 #include <proc/proc.h>
+#include <proc/thread.h>
 
 void default_ir_handler() {
     disable_int();
@@ -55,8 +56,8 @@ void ex_bounds_check() {
     panic();
 }
 
-void ex_invalid_opcode(struct regs *re, uint32_t eip) {
-    printk("Invalid opcode\nFaulty instruction: 0x%x\n", eip);
+void ex_invalid_opcode(struct regs_error *re) {
+    printk("Invalid opcode\nFaulty instruction: 0x%x\n", re->eip);
     printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
     panic();
 }
@@ -87,18 +88,39 @@ void ex_stack_fault() {
 }
 
 void ex_gpf(struct regs_error *re) {
-    printk("\n\nGeneral protection fault\nError code: %b\n\n", re->error);
+    printk("\nGeneral protection fault\nError code: %b\n", re->error);
     printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
+    printk("cr2: %x cr3: %x\n", get_cr2(), get_pdbr());
+    
+    // If a GPF occurs in kernel mode, we don't really want to continue
     if(re->es == 0x10)
         panic();
-    else
+    else                    // if we were in user mode, just kill that thread or process
         stop_thread(1);
 }
 
-void ex_page_fault() {
+static char *page_fault_errors[] = {
+    "Read on non present page",
+    "Page protection violation on read",
+    "Write on non present page",
+    "Page protection violation on write",
+    "User read on non present page",
+    "User page protection violation on read",
+    "User write on non present page",
+    "User page protection violation on write"
+};
+
+void ex_page_fault(struct regs_error *re) {
     int addr = get_cr2();
-    printk("Page fault at addr: 0x%x\n", addr);
-    panic();
+    printk("Page fault at addr: 0x%x\nError code: %b\n", addr, re->error);
+    printk("Error: %s\n", page_fault_errors[re->error]);
+    //printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
+    printk("Phys addr: 0x%x\n", get_phys_addr(get_kern_directory(), addr));
+    // If a PF occurs in kernel mode, we don't really want to continue
+    if(re->es == 0x10)
+        panic();
+    else                    // if we were in user mode, just kill that thread or process, we need to fix this
+        stop_thread(1);
 }
 
 void ex_fpu_error() {

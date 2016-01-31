@@ -55,6 +55,9 @@ pit_int:
     mov esp, eax            ; change stack pointer
 
 .restore:
+    mov al, 0x20            ; PIC acknowledge
+    out 0x20, al
+    
     pop gs
     pop fs
     pop es
@@ -63,8 +66,6 @@ pit_int:
     pop ebp
     pop edi
     pop esi
-    mov al, 0x20            ; PIC acknowledge
-    out 0x20, al
     pop edx
     pop ecx
     pop ebx

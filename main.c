@@ -37,12 +37,12 @@ int kmain(multiboot_info_t *info) {
     
     keyboard_init();
     
+    syscall_init();
+    install_tss();
+    
     vfs_init();
     floppy_init();
     ata_init();
-    
-    syscall_init();
-    install_tss();
     
     sched_init();
     

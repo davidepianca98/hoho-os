@@ -92,6 +92,7 @@ typedef struct program_header {
 } __attribute__((__packed__)) program_header_t;
 
 int elf_validate(elf_header_t *eh);
+int load_elf(char *name, thread_t *thread, page_dir_t *pdir);
 
 #endif
 

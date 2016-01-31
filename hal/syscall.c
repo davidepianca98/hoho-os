@@ -17,6 +17,7 @@
 #include <hal/hal.h>
 #include <hal/syscall.h>
 #include <proc/proc.h>
+#include <proc/thread.h>
 #include <drivers/keyboard.h>
 
 #define MAX_SYSCALL 5
@@ -39,9 +40,6 @@ int syscall_disp() {
     
     if(index >= MAX_SYSCALL)
         return 0;
-    if(index == 3) {
-        asm volatile("mov -8(%esp), %ebx");
-    }
     void *func = syscalls[index];
     asm volatile("push %%edi; \
                   push %%esi; \

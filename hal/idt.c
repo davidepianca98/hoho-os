@@ -23,9 +23,6 @@
 struct idt_ptr idtr;
 struct idt_info idt[MAX_INTERRUPTS];
 
-extern void gpf_handle();
-extern void invop_handle();
-
 void idt_init(uint16_t code) {
     int i;
     
@@ -50,7 +47,7 @@ void idt_init(uint16_t code) {
     install_ir(11, 0x80 | 0x0E, code, &ex_segment_not_present);
     install_ir(12, 0x80 | 0x0E, code, &ex_stack_fault);
     install_ir(13, 0x80 | 0x0E, code, &gpf_handle);
-    install_ir(14, 0x80 | 0x0E, code, &ex_page_fault);
+    install_ir(14, 0x80 | 0x0E, code, &pf_handle);
     install_ir(16, 0x80 | 0x0E, code, &ex_fpu_error);
     install_ir(17, 0x80 | 0x0E, code, &ex_alignment_check);
     install_ir(18, 0x80 | 0x0E, code, &ex_machine_check);

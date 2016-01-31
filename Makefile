@@ -1,8 +1,11 @@
 export AS = nasm
 export ASFLAGS = -f elf -o
 export CC = gcc
+#export CC = /home/davide/cross/bin/i386-elf-gcc
 export CFLAGS = -c -Wall -g -gstabs -Wextra -fno-builtin -nodefaultlibs -nostartfiles -nostdlib -m32 -I $(PWD)/include
+#export CFLAGS = -c -Wall -g -Wextra -I $(PWD)/include
 export LD = ld
+#export LD = /home/davide/cross/bin/i386-elf-ld
 export LDFLAGS = -m elf_i386 -T linker.ld
 
 all:

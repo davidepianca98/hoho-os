@@ -38,6 +38,10 @@ void print_meminfo() {
     printk("Total mem: %d MB\nFree mem: %d MB\n", get_mem_size() / 1024 / 1024, (get_max_blocks() - get_used_blocks()) * 4096 / 1024 / 1024);
     printk("Heap size: %d MB Used heap: %d MB Free heap: %d MB\n", get_heap_size() / 1024 / 1024, get_used_heap() / 1024 / 1024, (get_heap_size() - get_used_heap()) / 1024 / 1024);
     printk("Kernel start: 0x%x Kernel end: 0x%x Kernel size: %d\n", &kernel_start, &kernel_end, (uint32_t) (&kernel_end - &kernel_start));
+    uint32_t cr0 = 0;
+    asm volatile("mov %%cr0, %0" : "=r" (cr0));
+    printk("cr0: %x ", cr0);
+    printk("cr2: %x cr3: %x\n", get_cr2(), get_pdbr());
 }
 
 void print_file(file f) {
@@ -120,13 +124,15 @@ void console_exec(char *buf) {
                 printk("cd %s: directory not found\n", senddir);
         } else if(strncmp(buf, "start", 5) == 0) {
             char *buf2 = kmalloc(128);
+            memset(buf2, 0, 128);
             strcpy(buf2, buf + 6);
             char *arg2 = strchr(buf2, ' ');
             strcpy(senddir, dir);
             strcat(senddir, "/");
-            strncpy(senddir + strlen(dir) + 1, buf2, strlen(buf2) - strlen(arg2));
+            strncpy(senddir + strlen(dir) + 1, buf2, strlen(buf2) - (strlen(arg2) - 2));
             int procn = start_proc(senddir, arg2 + 1);
-            while(proc_state(procn) != PROC_STOPPED);
+            if(procn != PROC_STOPPED)
+                while(proc_state(procn) != PROC_STOPPED);
         } else if(strncmp(buf, "read", 4) == 0) {
             strcpy(senddir, dir);
             strcat(senddir, "/");
@@ -139,6 +145,7 @@ void console_exec(char *buf) {
             printk("\n");
         } else if(strncmp(buf, "write", 5) == 0) {
             char *buf2 = kmalloc(128);
+            memset(buf2, 0, 128);
             strcpy(buf2, buf + 6);
             char *arg2 = strchr(buf2, ' ');
             strcpy(senddir, dir);

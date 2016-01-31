@@ -21,7 +21,7 @@
 #include <drivers/video.h>
 
 #define HEAP_SIZE 1024 // 1024 pages, 1024 * 4 KB = 4 MB
-#define HEAP_START (0xC0000000 + &kernel_end + 4096)
+#define HEAP_START (&kernel_end + PAGE_SIZE + PAGE_SIZE)
 
 heap_info_t heap_info;
 
@@ -29,11 +29,20 @@ void kheap_init() {
     heap_info.start = (vmm_addr_t *) HEAP_START;
     heap_info.size = HEAP_SIZE * BLOCKS_LEN;
     heap_info.used = sizeof(heap_header_t);
-    heap_info.first_header = (heap_header_t *) HEAP_START;
+    heap_info.first_header = (heap_header_t *) heap_info.start;
     heap_info.first_header->magic = HEAP_MAGIC;
     heap_info.first_header->size = heap_info.size;
     heap_info.first_header->is_free = 1;
     heap_info.first_header->next = NULL;
+    
+    // TODO fix
+    /*void *phys;
+    vmm_addr_t virt = (vmm_addr_t) heap_info.start;
+    for(int i = 0; i < HEAP_SIZE; i++) {
+        phys = pmm_malloc();
+        vmm_map_phys(get_kern_directory(), (uint32_t) virt, (uint32_t) phys, PAGE_PRESENT_FLAG | PAGE_RW_FLAG);
+        virt += PAGE_SIZE;
+    }*/
 }
 
 void *kmalloc(size_t len) {
