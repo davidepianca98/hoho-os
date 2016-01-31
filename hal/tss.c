@@ -34,11 +34,11 @@ void install_tss() {
     tss.esp0 = 0;
     tss.ss0 = 0x10;
     tss.cs = 0x0B;
-	tss.ss = 0x13;
-	tss.es = 0x13;
-	tss.ds = 0x13;
-	tss.fs = 0x13;
-	tss.gs = 0x13;
+    tss.ss = 0x13;
+    tss.es = 0x13;
+    tss.ds = 0x13;
+    tss.fs = 0x13;
+    tss.gs = 0x13;
     
     flush_tss();
 }

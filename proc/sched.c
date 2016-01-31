@@ -53,7 +53,13 @@ uint32_t schedule(uint32_t esp) {
         printk("Something wrong\n");
         panic();
     }
-        
+    
+    // check if the time slice ended
+    if(get_tick_count() <= list->thread_list->time)
+        return esp;
+    
+    reset_tick_count();
+    
     // save the stack pointer
     list->thread_list->esp_kernel = esp;
     

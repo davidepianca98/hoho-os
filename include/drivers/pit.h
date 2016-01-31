@@ -53,6 +53,7 @@ uint8_t pit_read_data(uint8_t counter);
 void pit_init();
 void pit_start_counter(uint32_t frequency, uint8_t counter, uint8_t mode);
 int get_tick_count();
+void reset_tick_count();
 
 #endif
 

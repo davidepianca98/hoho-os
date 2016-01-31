@@ -21,6 +21,7 @@
 
 typedef struct thread {
     pid_t pid;                      // thread id
+    int time;                       // thread's time slice in ms
     int main;                       // if it's the main thread
     int state;                      // thread's state
     void *parent;                   // pointer to proc

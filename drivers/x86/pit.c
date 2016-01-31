@@ -82,3 +82,7 @@ int get_tick_count() {
     return pit_ticks;
 }
 
+void reset_tick_count() {
+    pit_ticks = 0;
+}
+
