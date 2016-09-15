@@ -54,9 +54,11 @@ extern void floppy_int();
 
 void floppy_init() {
     install_ir(38, 0x80 | 0x0E, 0x8, &floppy_int);
-    floppy_detect_drives();
-    floppy_reset();
-    floppy_drive_data(13, 1, 0xF, 1);
+    int ndrives = floppy_detect_drives();
+    if(ndrives > 0) {
+        floppy_reset();
+        floppy_drive_data(13, 1, 0xF, 1);
+    }
 }
 
 void floppy_wait_irq() {
@@ -342,9 +344,10 @@ void floppy_lba_to_chs(int lba, int *head, int *track, int *sector) {
     *sector = (lba % FLOPPY_SECTORS_PER_TRACK) + 1;
 }
 
-void floppy_detect_drives() {
+int floppy_detect_drives() {
     outportb(0x70, 0x10);
     uint8_t drives = inportb(0x71);
+    int ndrives = 0;
     
     if(strcmp(drive_types[drives >> 4], "1.44MB 3.5") == 0) {
         dev_info[0].id = 4;
@@ -357,6 +360,7 @@ void floppy_detect_drives() {
         fat_init(&dev_info[0].fs);
         device_register(&dev_info[0]);
         cur_drive = 0;
+        ndrives++;
     }
     if(strcmp(drive_types[drives & 0xF], "1.44MB 3.5") == 0) {
         dev_info[1].id = 5;
@@ -369,10 +373,12 @@ void floppy_detect_drives() {
         fat_init(&dev_info[1].fs);
         device_register(&dev_info[1]);
         cur_drive = 1;
+        ndrives++;
     }
 
     //printk(" - Floppy drive 0: %s\n", drive_types[drives >> 4]);
     //printk(" - Floppy drive 1: %s\n", drive_types[drives & 0xF]);
+    return ndrives;
 }
 
 void floppy_set_cur_drive(int drive) {

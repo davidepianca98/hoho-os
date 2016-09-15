@@ -104,6 +104,7 @@ page_dir_t *create_address_space() {
     if(kern_dir != 0) {
         // clone page directory
         memcpy(pdir, kern_dir, PAGEDIR_SIZE);
+        vmm_map_phys(pdir, (uint32_t) pdir, (uint32_t) pdir, PAGE_PRESENT | PAGE_RW | PAGE_USER);
     }
     return pdir;
 }

@@ -17,7 +17,7 @@
 #include <proc/proc.h>
 #include <mm/memory.h>
 #include <fs/vfs.h>
-#include <string.h>
+#include <lib/string.h>
 #include <elf.h>
 #include <drivers/video.h>
 
@@ -84,10 +84,10 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     
     thread->eip = eh->entry;
     
-    uint32_t totsize = 0;
+    int index = 0;
     for(i = 0; i < eh->entry_number_prog_header; i++) {
         if(ph[i].p_type == 1) {
-            //printk("%d %d 0x%x\n", ph[i].p_mem_size, ph[i].p_file_size, ph[i].p_vaddr);
+            //printk("0x%x 0x%x 0x%x\n", ph[i].p_mem_size, ph[i].p_file_size, ph[i].p_vaddr);
             if(ph[i].p_mem_size == 0)
                 continue;
             
@@ -104,19 +104,21 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
             // copy the executable into correct memory
             memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) vbuf + ph[i].p_offset), ph[i].p_file_size);
             memset((void *) ph[i].p_vaddr + ph[i].p_file_size, 0, ph[i].p_mem_size - ph[i].p_file_size);
-            totsize += ph[i].p_file_size;
+            index = i;
         }
     }
+    // the size of the executable in memory is equal to the virtual address of the last section + the offset
+    // also round up
+    thread->image_size = (ph[index].p_vaddr + ph[index].p_file_size - thread->eip + PAGE_SIZE) >> 12 << 12;
     
     // unmap executable from kernel directory
-    for(i = 0; i < totsize / PAGE_SIZE; i++) {
+    for(i = 0; i < thread->image_size / PAGE_SIZE; i++) {
         vmm_unmap_phys_addr(get_page_directory(), (uint32_t) thread->image_base + (i * PAGE_SIZE));
         void *buf = get_phys_addr(get_page_directory(), (uint32_t) vbuf + (i + PAGE_SIZE));
         pmm_free(buf);
         vmm_unmap_phys_addr(get_page_directory(), (uint32_t) vbuf + (i * PAGE_SIZE));
     }
     
-    thread->image_size = totsize;
     return 1;
 }
 

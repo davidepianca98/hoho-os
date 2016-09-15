@@ -49,11 +49,13 @@ int start_proc(char *name, char *arguments) {
     }
     
     if(!build_stack(proc->thread_list, proc->pdir, 0)) {
+        printk("Failed allocating memory, error 1\n");
         sched_state(1);
         return PROC_STOPPED;
     }
     
     if(!build_heap(proc->thread_list, proc->pdir, 0)) {
+        printk("Failed allocating memory, error 2\n");
         sched_state(1);
         return PROC_STOPPED;
     }
@@ -61,11 +63,13 @@ int start_proc(char *name, char *arguments) {
     uint32_t argc, argv;
     
     if(!heap_fill(proc->thread_list, name, arguments, &argc, &argv)) {
+        printk("Failed allocating memory, error 3\n");
         sched_state(1);
         return PROC_STOPPED;
     }
     
     if(!stack_fill(proc->thread_list, argc, argv)) {
+        printk("Failed allocating memory, error 4\n");
         sched_state(1);
         return PROC_STOPPED;
     }
@@ -82,12 +86,13 @@ int start_proc(char *name, char *arguments) {
 /* Builds the stack for a thread */
 int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
     // build the user stack
-    void *stack = (void *) ((thread->image_base + thread->image_size + PAGE_SIZE + (PAGE_SIZE * 3 * nthreads)) >> 12 << 12);
-    
-    vmm_map_phys(pdir, (uint32_t) stack, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    void *stack = (void *) (thread->image_base + thread->image_size + (PAGE_SIZE * 3 * nthreads));
 
     thread->esp = (uint32_t) stack;
     thread->stack_limit = ((uint32_t) thread->esp + PAGE_SIZE);
+    
+    vmm_map_phys(pdir, thread->esp, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    vmm_map_phys(get_page_directory(), thread->esp, (uint32_t) get_phys_addr(pdir, thread->esp), PAGE_PRESENT | PAGE_RW);
     
     // build the kernel stack
     thread->esp_kernel = thread->stack_limit;

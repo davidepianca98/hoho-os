@@ -23,10 +23,7 @@ uint8_t pit_ticks;
 extern void pit_int();
 
 void sched_state(int on) {
-    if(on == 0)
-        sched_on = 0;
-    else if(on == 1)
-        sched_on = 1;
+    sched_on = on;
 }
 
 int get_sched_state() {

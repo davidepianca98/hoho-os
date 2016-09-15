@@ -105,7 +105,7 @@ void floppy_enable();
 void floppy_reset();
 void floppy_control_motor(int on);
 void floppy_lba_to_chs(int lba, int *head, int *track, int *sector);
-void floppy_detect_drives();
+int floppy_detect_drives();
 void floppy_set_cur_drive(int drive);
 
 #endif
