@@ -328,14 +328,10 @@ void floppy_control_motor(int on) {
             break;
     }
     
-    //make drive independent
     if(on)
-        //floppy_write_dor((uint8_t) (cur_drive | motor | FLOPPY_DOR_MASK_RESET | FLOPPY_DOR_MASK_DMA));
-        floppy_write_dor(0x1C);
+        floppy_write_dor(cur_drive | motor | FLOPPY_DOR_MASK_RESET | FLOPPY_DOR_MASK_DMA);
     else
-        //floppy_write_dor(FLOPPY_DOR_MASK_RESET);
-        floppy_write_dor(0x0C);
-    //sleep(2);
+        floppy_write_dor(FLOPPY_CMD_READ_DEL_S);
 }
 
 void floppy_lba_to_chs(int lba, int *head, int *track, int *sector) {

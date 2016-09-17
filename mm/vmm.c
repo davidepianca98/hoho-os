@@ -38,7 +38,7 @@ void map_kernel(page_dir_t *pdir) {
     mm_addr_t phys = 0x0;
     
     // identity map first 1MB and kernel
-    while(phys < ((uint32_t) &kernel_end + PAGE_SIZE * 64)) { // should be without * 64 TODO fix
+    while(phys < ((uint32_t) &kernel_end + PAGE_SIZE * 64)) { // TODO should be without * 64 TODO fix
         vmm_map_phys(pdir, virt, phys, PAGE_PRESENT | PAGE_RW);
         virt += PAGE_SIZE;
         phys += PAGE_SIZE;
@@ -118,8 +118,9 @@ void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
 }
 
 void vmm_unmap_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
-    if(pdir[virt >> 22] != 0)
+    if(pdir[virt >> 22] != 0) {
         //vmm_unmap_page_table(pdir, virt);
         ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = 0;
+    }
 }
 

@@ -38,6 +38,8 @@ void exit(int code) {
 
 /* Waits until a thread ends */
 pid_t wait(int *x) {
+    // TODO implement
+    x = x;
     return 0;
 }
 

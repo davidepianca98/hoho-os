@@ -38,8 +38,8 @@ void fat_mount(device_t *dev) {
         if(mbr->partition_table[i].sys_id != FAT32_SYSTEM_ID) {
             continue;
         } else {
-            uint32_t lba = mbr->partition_table[i].lba_start;
-            uint32_t totsec = mbr->partition_table[i].total_sectors;
+            //uint32_t lba = mbr->partition_table[i].lba_start;
+            //uint32_t totsec = mbr->partition_table[i].total_sectors;
             //printk("lba: %d sects: %d\n", lba, totsec);
             //bs = (bootsector_t *) dev->read(lba);
             break;
