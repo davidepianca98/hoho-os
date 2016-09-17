@@ -14,30 +14,33 @@
 #  limitations under the License.
 #
 
+sudo mkdir /mnt/folder
 sudo losetup /dev/loop4 floppy.img
-sudo mount /dev/loop4 /mnt -t msdos -o "fat=12"
+sudo mount /dev/loop4 /mnt/folder -t msdos -o "fat=12"
 #su
-sudo rm /mnt/proc
-sudo cp apps/example/proc /mnt/proc
-sudo rm /mnt/editor
-sudo cp apps/editor/editor /mnt/editor
-sudo rm /mnt/mproc
-sudo cp apps/multiprocessing/mproc /mnt/mproc
-sudo umount /mnt
+sudo rm /mnt/folder/proc
+sudo cp apps/example/proc /mnt/folder/proc
+sudo rm /mnt/folder/editor
+sudo cp apps/editor/editor /mnt/folder/editor
+sudo rm /mnt/folder/mproc
+sudo cp apps/multiprocessing/mproc /mnt/folder/mproc
+sudo umount /mnt/folder
 sudo losetup -d /dev/loop4
+sudo rm -rf /mnt/folder
 
+sudo mkdir /mnt/folder
 sudo losetup /dev/loop4 hdd.img
-sudo mount /dev/loop4 /mnt -t msdos -o "fat=32"
+sudo mount /dev/loop4 /mnt/folder -t msdos -o "fat=32"
 #su
-sudo rm /mnt/proc
-sudo cp apps/example/proc /mnt/proc
-sudo rm /mnt/editor
-sudo cp apps/editor/editor /mnt/editor
-sudo rm /mnt/mproc
-sudo cp apps/multiprocessing/mproc /mnt/mproc
-sudo umount /mnt
+sudo rm /mnt/folder/proc
+sudo cp apps/example/proc /mnt/folder/proc
+sudo rm /mnt/folder/editor
+sudo cp apps/editor/editor /mnt/folder/editor
+sudo rm /mnt/folder/mproc
+sudo cp apps/multiprocessing/mproc /mnt/folder/mproc
+sudo umount /mnt/folder
 sudo losetup -d /dev/loop4
+sudo rm -rf /mnt/folder
 
 rm hdd.vdi
 VBoxManage convertfromraw --format VDI hdd.img hdd.vdi
-

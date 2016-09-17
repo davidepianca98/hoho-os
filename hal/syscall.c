@@ -14,20 +14,23 @@
  *  limitations under the License.
  */
 
+#include <console.h>
 #include <hal/hal.h>
 #include <hal/syscall.h>
 #include <proc/proc.h>
 #include <proc/thread.h>
 #include <drivers/keyboard.h>
 
-#define MAX_SYSCALL 5
+#define MAX_SYSCALL 7
 
 static void *syscalls[] = {
-    &printk,
-    &gets,
-    &clear,
-    &start_thread,
-    &stop_thread
+    &printk,        // printf
+    &gets,          // scanf
+    &clear,         // clear
+    &start_thread,  
+    &stop_thread,  
+    &vfs_file_open, // fopen
+    &console_pwd    // PWD
 };
 
 void syscall_init() {

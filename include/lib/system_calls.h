@@ -18,6 +18,7 @@
 #define SYSTEM_CALLS_H
 
 void system(char *arg);
+char *pwd();
 
 #endif
 

@@ -23,3 +23,10 @@ void system(char *arg) {
     }
 }
 
+char *pwd() {
+    char *ret;
+    asm volatile("mov $6, %eax; \
+	                  int $0x72");
+    asm volatile("mov %%eax, %0" : "=r" (ret));
+    return ret;
+}

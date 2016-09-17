@@ -21,6 +21,7 @@ void strcpy(char *str, char *format) {
     for(i = 0; i < strlen(format); i++) {
         str[i] = format[i];
     }
+    str[i] = '\0';
 }
 
 void strncpy(char *str, char *format, size_t len) {

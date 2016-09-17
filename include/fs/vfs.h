@@ -21,7 +21,7 @@
 
 #define MAX_DEVICES 26
 
-typedef struct fil {
+typedef struct {
     char name[32];
     uint32_t flags;
     uint32_t len;
@@ -31,7 +31,7 @@ typedef struct fil {
     uint32_t type;
 } file;
 
-typedef struct fsys {
+typedef struct {
     file (*directory) (char *dir, int devid);
     void (*mount) ();
     void (*read) (file *f, char *str);
@@ -50,7 +50,7 @@ void vfs_init();
 void vfs_ls();
 void vfs_ls_dir(char *dir);
 int vfs_cd(char *name);
-file vfs_file_open(char *name, int w);
+file vfs_file_open(char *name, char *mode);
 void vfs_file_read(file *f, char *str);
 void vfs_file_write(file *f, char *str);
 void vfs_file_close(file *f);

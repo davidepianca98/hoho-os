@@ -55,7 +55,9 @@ void console_start(char *dir, char *command) {
     strcat(senddir, "/");
     strcat(senddir, get_argument(command, 1));
     // Cut the arguments from the path
-    strncpy(senddir, senddir, strlen(senddir) - strlen(get_argument(senddir, 1)) - 1);
+    if(get_argument(senddir, 1)) {
+        strncpy(senddir, senddir, strlen(senddir) - strlen(get_argument(senddir, 1)) - 1);
+    }
     
     char *arguments = kmalloc(128);
     memset(arguments, 0, 128);
@@ -75,7 +77,7 @@ void console_read(char *dir, char *command) {
     strcpy(senddir, dir);
     strcat(senddir, "/");
     strcat(senddir, get_argument(command, 1));
-    file f = vfs_file_open(senddir, 0);
+    file f = vfs_file_open(senddir, "r");
     if(f.type != FS_FILE) {
         printk("read: file %s not found\n", senddir);
     } else {
@@ -93,12 +95,19 @@ void console_write(char *dir, char *command) {
     strcat(senddir, "/");
     strcat(senddir, get_argument(command, 1));
     
-    file f = vfs_file_open(senddir, 1);
+    file f = vfs_file_open(senddir, "w");
     if(f.type != FS_FILE) {
         printk("write: file %s not found\n", senddir);
     } else {
         vfs_file_write(&f, get_argument(command, 2));
     }
+}
+
+/**
+ * Gets the current working directory
+ */
+char *console_pwd() {
+    return get_dir();
 }
 
 /**

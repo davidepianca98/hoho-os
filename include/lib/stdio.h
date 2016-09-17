@@ -17,8 +17,21 @@
 #ifndef STDIO_H
 #define STDIO_H
 
+#include "../types.h"
+
+typedef struct {
+    char name[32];
+    uint32_t flags;
+    uint32_t len;
+    uint32_t eof;
+    uint32_t dev;
+    uint32_t current_cluster;
+    uint32_t type;
+} FILE;
+
 void printf(char *buffer, ...);
 void scanf(char *format, ...);
+FILE *fopen(char *filename, char *mode);
 
 #endif
 

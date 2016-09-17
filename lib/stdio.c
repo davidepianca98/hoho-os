@@ -17,6 +17,7 @@
 #include <lib/stdio.h>
 #include <types.h>
 #include <lib/string.h>
+#include <lib/system_calls.h>
 
 void printf(char *buffer, ...) {
     char str[1024];
@@ -71,5 +72,21 @@ void scanf(char *format, ...) {
         }
     }
     va_end(args);
+}
+
+FILE *fopen(char *filename, char *mode) {
+    FILE *f;
+    char file[256];
+    strcpy(file, pwd());
+    strcat(file, "/");
+    strcat(file, filename);
+    
+    asm volatile("lea (%0), %%ebx" : : "b" (file));
+    asm volatile("lea (%0), %%ecx" : : "c" (mode));
+    asm volatile("mov $5, %eax; \
+                   int $0x72");
+    
+    asm volatile("mov %%eax, %0" : "=r" (f));
+    return f;
 }
 

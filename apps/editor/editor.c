@@ -3,13 +3,13 @@
 #include <system_calls.h>
 
 int main(int argc, char **argv) {
-    int i;
+    char s[64];
+    printf("File to edit: ");
+    scanf("%s", s);
+    
+    FILE *f = fopen(s, "r");
     //system("clear");
-    printf("argc: %d\n", argc);
-    for(i = 0; i < argc; i++) {
-        printf("argv[%d]: %s\n", i, argv[i]);
-    }
-    printf("addr: %x\n", argv);
+    
     return 0;
 }
 

@@ -53,10 +53,11 @@ int vfs_cd(char *name) {
             char *p = strchr(name + 1, '/');
             if(p) {
                 file f = devs[device]->cd(name + 1);
-                if(f.type == FS_DIR)
+                if(f.type == FS_DIR) {
                     return 1;
-                else
+                } else {
                     return 0;
+                }
             }
             return 1;
         }
@@ -64,14 +65,15 @@ int vfs_cd(char *name) {
     return 0;
 }
 
-file vfs_file_open(char *name, int w) {
+file vfs_file_open(char *name, char *mode) {
     int device = get_dev_id_by_name(name);
     file f;
     if(device >= 0) {
         if(devs[device]) {
             f = devs[device]->open(name + 1);
-            if(w)
+            if(strcmp(mode, "w") == 0) {
                 f.len = 0;
+            }
             return f;
         }
     }
@@ -81,8 +83,9 @@ file vfs_file_open(char *name, int w) {
 
 void vfs_file_read(file *f, char *str) {
     if(f) {
-        if(devs[f->dev])
+        if(devs[f->dev]) {
             devs[f->dev]->read(f, str);
+        }
     }
 }
 

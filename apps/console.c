@@ -24,9 +24,6 @@
 #include <proc/proc.h>
 #include <proc/sched.h>
 
-//extern uint32_t kernel_start;
-//extern uint32_t kernel_end;
-
 char *user;
 char *dir;
 
@@ -130,4 +127,11 @@ void console_exec(char *buf) {
     } else {
         printk("Command not found\n");
     }
+}
+
+/**
+ * Gets the current working directory
+ */
+char *get_dir() {
+    return dir;
 }

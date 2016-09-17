@@ -23,7 +23,9 @@
 #include <hal/hal.h>
 #include <lib/string.h>
 
-/* Starts a new process */
+/**
+ * Starts a new process
+ */
 int start_proc(char *name, char *arguments) {
     process_t *proc = (process_t *) kmalloc(sizeof(process_t));
     strcpy(proc->name, name);
@@ -83,7 +85,9 @@ int start_proc(char *name, char *arguments) {
     return proc->thread_list->pid;
 }
 
-/* Builds the stack for a thread */
+/**
+ *Builds the stack for a thread
+ */
 int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
     // build the user stack
     void *stack = (void *) (thread->image_base + thread->image_size + (PAGE_SIZE * 3 * nthreads));
@@ -104,18 +108,43 @@ int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
     return 1;
 }
 
+/**
+ * Builds the heap for a userspace thread
+ */
+int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
+    // build the heap
+    vmm_addr_t heap = thread->stack_kernel_limit + (PAGE_SIZE * 3 * nthreads);
+    
+    vmm_map_phys(pdir, heap, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    
+    vmm_map_phys(get_page_directory(), (uint32_t) heap, (uint32_t) get_phys_addr(pdir, heap), PAGE_PRESENT | PAGE_RW);
+    
+    thread->heap = heap;
+    thread->heap_limit = heap + PAGE_SIZE;
+    
+    heap_init((vmm_addr_t *) heap);
+
+    return 1;
+}
+
+/**
+ * Fills the heap with arguments
+ */
 int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uint32_t *argv1) {
     *argc = 1;
-    char **argv = (char **) umalloc(strlen(name) + strlen(arguments), (vmm_addr_t *) thread->heap);
+    char **argv = (char **) umalloc(strlen(name) + strlen(arguments) + 1, (vmm_addr_t *) thread->heap);
     strcpy(argv[0], name);
     
     while(*arguments) {
         char *p = strchr(arguments, ' ');
-        if(p == NULL)
+        if(p == NULL) {
+            strcpy(argv[*argc], arguments);
+            (*argc)++;
             break;
+        }
         int strl = strlen(arguments) - strlen(p);
         strncpy(argv[*argc], arguments, strl);
-        argc++;
+        (*argc)++;
         while(strl > 0) {
             arguments++;
             strl--;
@@ -128,6 +157,9 @@ int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uin
     return 1;
 }
 
+/**
+ * Fills the stack with register values
+ */
 int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
     // fill kernel stack
     uint32_t *stackp = (uint32_t *) thread->stack_kernel_limit;
@@ -159,24 +191,9 @@ int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
     return 1;
 }
 
-/* Builds the heap for a userspace thread */
-int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
-    // build the heap
-    vmm_addr_t heap = thread->stack_kernel_limit + (PAGE_SIZE * 3 * nthreads);
-    
-    vmm_map_phys(pdir, heap, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER);
-    
-    vmm_map_phys(get_page_directory(), (uint32_t) heap, (uint32_t) get_phys_addr(pdir, heap), PAGE_PRESENT | PAGE_RW);
-    
-    thread->heap = heap;
-    thread->heap_limit = heap + PAGE_SIZE;
-    
-    heap_init((vmm_addr_t *) heap);
-
-    return 1;
-}
-
-/* Terminates a process and frees all the memory */
+/**
+ * Terminates a process and frees all the memory 
+ */
 void end_proc(int ret) {
     sched_state(0);
 
@@ -230,7 +247,9 @@ void end_proc(int ret) {
     while(1);
 }
 
-/* Returns given id process state */
+/**
+ * Returns given id process state
+ */
 int proc_state(int id) {
     process_t *cur = get_proc_by_id(id);
     return cur->state;
