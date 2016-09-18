@@ -27,8 +27,9 @@ void hal_init() {
 }
 
 void sleep(int s) {
+    // TODO better solution
     int ticks = get_tick_count() + s;
-    int passed;
+    int passed = 0;
     while((passed += get_tick_count()) < ticks);
 }
 

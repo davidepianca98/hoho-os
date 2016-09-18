@@ -101,7 +101,7 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
 void *get_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
     if(pdir[virt >> 22] == 0)
         return 0;
-    return (void *) ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12];
+    return (void *) (((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] & ~0xFFF);
 }
 
 /**

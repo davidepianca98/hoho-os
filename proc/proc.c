@@ -125,7 +125,12 @@ int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
     // build the heap
     vmm_addr_t heap = thread->stack_kernel_limit + (PAGE_SIZE * 3 * nthreads);
     
-    vmm_map_phys(pdir, heap, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER); // TODO remove 0
+    void *mem = pmm_malloc();
+    if(!mem) {
+        printk("Failed allocating memory\n");
+        return -1;
+    }
+    vmm_map_phys(pdir, heap, (uint32_t) mem, PAGE_PRESENT | PAGE_RW | PAGE_USER);
     
     vmm_map_phys(get_page_directory(), (uint32_t) heap, (uint32_t) get_phys_addr(pdir, heap), PAGE_PRESENT | PAGE_RW);
     

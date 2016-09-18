@@ -25,7 +25,7 @@
 #define FLOPPY_DMA_CHANNEL 2
 
 uint8_t floppy_irq_done = 0;
-int cur_drive = 0; // fix this
+int cur_drive = 0;
 static device_t dev_info[4];
 
 static const char floppy_dmabuf[FLOPPY_DMA_LEN] __attribute__((aligned(0x8000)));

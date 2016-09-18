@@ -67,31 +67,28 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
         printk("Failed opening file\n");
         return -1;
     }
-
-    // Reserve some memory for the executable
-    char *vbuf = (char *) pmm_malloc();
-    if(!vbuf) {
-        printk("Failed allocating memory\n");
-        return -1;
-    }
-    vmm_map_phys(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS, (uint32_t) vbuf, PAGE_PRESENT | PAGE_RW);
     
     // Load the executable in memory
     uint32_t file_size = 0;
+    uint32_t j = 0;
     while(f.eof != 1) {
-        // Copy the file into memory
-        vfs_file_read(&f, (char *) MEMORY_LOAD_ADDRESS + (file_size * 512));
-        file_size++;
-        
         // The executable needs more memory, so reserve it
-        if((file_size % 8) == 0) {
+        if(file_size == 0) {
             char *file_mem = (char *) pmm_malloc();
             if(!file_mem) {
                 printk("Failed allocating memory\n");
                 return -1;
             }
-            vmm_map_phys(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (PAGE_SIZE * (file_size / 8)), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW);
+            vmm_map_phys(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW);
         }
+        // Copy the file into memory
+        vfs_file_read(&f, (char *) (get_phys_addr(get_page_directory(), MEMORY_LOAD_ADDRESS + (j * 512)) + (j * 512)));
+        file_size++;
+        // Check if the page is finished
+        if(file_size >= 8) {
+            file_size = 0;
+        }
+        j++;
     }
     vfs_file_close(&f);
     
@@ -131,7 +128,7 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
                 vmm_map_phys(get_page_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) get_phys_addr(pdir, ph[i].p_vaddr), PAGE_PRESENT | PAGE_RW);
             }
             // Copy the executable into correct memory
-            memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) vbuf + ph[i].p_offset), ph[i].p_file_size);
+            memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) MEMORY_LOAD_ADDRESS + ph[i].p_offset), ph[i].p_file_size);
             memset((void *) ph[i].p_vaddr + ph[i].p_file_size, 0, ph[i].p_mem_size - ph[i].p_file_size);
             index = i;
         }
@@ -143,9 +140,9 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     // Unmap executable from kernel directory
     for(uint32_t i = 0; i < file_size; i++) {
         vmm_unmap_phys_addr(get_page_directory(), (uint32_t) thread->image_base + (i * PAGE_SIZE));
-        void *buf = get_phys_addr(get_page_directory(), (uint32_t) vbuf + (i + PAGE_SIZE));
+        void *buf = get_phys_addr(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i + PAGE_SIZE));
         pmm_free(buf);
-        vmm_unmap_phys_addr(get_page_directory(), (uint32_t) vbuf + (i * PAGE_SIZE));
+        vmm_unmap_phys_addr(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE));
     }
     
     return 1;
