@@ -20,6 +20,9 @@
 #include <mm/paging.h>
 #include <drivers/video.h>
 
+/**
+ * Init the user process heap memory
+ */
 void heap_init(vmm_addr_t *addr) {
     heap_info_t *heap_info = (heap_info_t *) addr;
     heap_info->start = addr + sizeof(heap_info_t);
@@ -33,10 +36,7 @@ void heap_init(vmm_addr_t *addr) {
 }
 
 void *umalloc(size_t len, vmm_addr_t *heap) {
-    void *ptr = first_free_usr(len, heap);
-    if(ptr)
-        return ptr;
-    return NULL;
+    return first_free_usr(len, heap);
 }
 
 void ufree(void *ptr, vmm_addr_t *heap) {

@@ -23,6 +23,8 @@
 #define BLOCKS_LEN 4096
 #define BYTE_SET 0xFFFFFFFF
 
+#define	ROUNDUP(x, align)		(-(-(x) & -(align)))
+
 typedef uint32_t mm_addr_t;
 
 typedef uint32_t vmm_addr_t;
@@ -43,7 +45,7 @@ typedef struct memory_region {
     uint32_t type;
 } __attribute__((__packed__)) mem_region_t;
 
-void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr);
+void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len);
 void pmm_set_bit(int bit);
 void pmm_unset_bit(int bit);
 int pmm_get_bit(int bit);

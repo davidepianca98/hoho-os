@@ -41,8 +41,8 @@ uint8_t *keycache;
 extern void keyboard_int();
 
 void keyboard_init() {
-    outportb(KBD_CHECK, 0xAE);
     install_ir(33, 0x80 | 0x0E, 0x8, &keyboard_int);
+    outportb(KBD_CHECK, 0xAE);
     keycache = kmalloc(sizeof(uint8_t) * 256);
 	kbd_enabled = 1;
 }

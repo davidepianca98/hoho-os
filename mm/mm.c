@@ -20,31 +20,45 @@
 
 mem_info_t pmm;
 
-void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr) {
-    int i;
+/**
+ * Initializes the physical memory manager
+ * Every bit in the pmm.map indicates if a 4096 byte block is free or not
+ */
+void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len) {
+    uint32_t kernel_size = &kernel_end - &kernel_start;
 
+    // Get the blocks number
     pmm.max_blocks = pmm.used_blocks = mem_size / BLOCKS_LEN;
-    pmm.map = (uint32_t *) &kernel_end;
+    // Set the address for the memory map
+    pmm.map = (uint32_t *) 0x100000 + (ROUNDUP(kernel_size, 4096));
+    // Set all the blocks as used
     memset(pmm.map, 0xF, pmm.max_blocks / BLOCKS_PER_BYTE);
     
     mem_region_t *mm_reg = (mem_region_t *) mmap_addr;
+    mem_region_t *mm_lim = (mem_region_t *) mmap_addr + mmap_len;
     
-    for(i = 0; i < 10; ++i) {
-        if(mm_reg[i].type > 4)
-            mm_reg[i].type = 1;
+    // Parse the memory map
+    while(mm_reg < mm_lim) {
+        // Check if the memory region is available
+        if(mm_reg[0].type > 4 || mm_reg[0].type == 1)
+            pmm_init_reg(mm_reg[0].addr_low, mm_reg[0].len_low);
         
-        if(i > 0 && mm_reg[i].addr_low == 0)
+        // Increment the pointer to the next map entry
+        mm_reg++;
+        
+        // Check if it's finished
+        if(mm_reg[0].addr_low == 0)
             break;
-	   
-        if(mm_reg[i].type == 1)
-            pmm_init_reg(mm_reg[i].addr_low, mm_reg[i].len_low);
     }
-    pmm_deinit_reg(0x100000, &kernel_end - &kernel_start);
+    pmm_deinit_reg(0x100000, kernel_size);
     pmm_deinit_reg(0x0, 0x10000);
     pmm_deinit_reg((uint32_t) pmm.map, pmm.max_blocks);
     pmm.size = (pmm.max_blocks - pmm.used_blocks) * BLOCKS_LEN;
 }
 
+/**
+ * Sets the block as used
+ */
 void pmm_set_bit(int bit) {
     if((bit < 0) || ((uint32_t) bit > pmm.max_blocks)) {
         printk("ERROR\n");
@@ -53,6 +67,9 @@ void pmm_set_bit(int bit) {
     pmm.map[bit / 32] |= 1 << (bit % 32);
 }
 
+/**
+ * Sets the block as free
+ */
 void pmm_unset_bit(int bit) {
     pmm.map[bit / 32] &= ~(1 << (bit % 32));
 }
@@ -61,6 +78,9 @@ int pmm_get_bit(int bit) {
     return pmm.map[bit / 32] & 1 << (bit % 32);
 }
 
+/**
+ * Gets the first free block
+ */
 int pmm_first_free() {
     uint32_t i;
     int j;
@@ -68,15 +88,18 @@ int pmm_first_free() {
     for(i = 0; i < pmm.max_blocks / 32; i++) {
         if(pmm.map[i] != BYTE_SET) {
             for(j = 0; j < 32; j++) {
-                if(!pmm_get_bit(j + (i * 32)))
-                //if(!(pmm.map[i] & (1 << j)))
+                if(!(pmm.map[i] & (1 << j))) {
                     return (i * 32) + j;
+                }
             }
         }
     }
     return -1;
 }
 
+/**
+ * Gets the first free n contiguous blocks
+ */
 int pmm_first_free_contig(int n) {
     uint32_t i;
     int j, temp, free;
@@ -89,15 +112,16 @@ int pmm_first_free_contig(int n) {
     for(i = 0; i < pmm.max_blocks / 32; i++) {
         if(pmm.map[i] != BYTE_SET) {
             for(j = 0; j < 32; j++) {
-                //if(pmm_get_bit(j + (i * 32)) != 1) {
                 if(!(pmm.map[i] & (1 << j))) {
                     temp = (i * 32) + (1 << j);
                     free = 0;
                     for(int k = 0; k <= n; k++) {
-                        if(!pmm_get_bit(temp + k))
+                        if(!pmm_get_bit(temp + k)) {
                             free++;
-                        if(free == n)
+                        }
+                        if(free == n) {
                             return (i * 32) + j;
+                        }
                     }
                 }
             }
@@ -106,6 +130,9 @@ int pmm_first_free_contig(int n) {
     return -1;
 }
 
+/**
+ * Initializes a memory region to be used
+ */
 void pmm_init_reg(mm_addr_t addr, uint32_t size) {
     uint32_t i;
     uint32_t blocks = size / BLOCKS_LEN;
@@ -117,6 +144,9 @@ void pmm_init_reg(mm_addr_t addr, uint32_t size) {
     pmm_set_bit(0);
 }
 
+/**
+ * Deinitializes a reserved memory region
+ */
 void pmm_deinit_reg(mm_addr_t addr, uint32_t size) {
     uint32_t i;
     uint32_t blocks = size / BLOCKS_LEN;
@@ -128,6 +158,9 @@ void pmm_deinit_reg(mm_addr_t addr, uint32_t size) {
     pmm_set_bit(0);
 }
 
+/**
+ * Returns a usable block
+ */
 void *pmm_malloc() {
     int p = pmm_first_free();
     if(p == -1)
@@ -137,6 +170,9 @@ void *pmm_malloc() {
     return (void *) (BLOCKS_LEN * p);
 }
 
+/**
+ * Returns n contiguous usable blocks
+ */
 void *pmm_malloc_blocks(int n) {
     int i;
     int p = pmm_first_free_contig(n);
@@ -149,6 +185,9 @@ void *pmm_malloc_blocks(int n) {
     return (void *) (BLOCKS_LEN * p);
 }
 
+/**
+ * Frees a block
+ */
 void pmm_free(mm_addr_t *frame) {
     pmm_unset_bit((uint32_t) frame / BLOCKS_LEN);
     pmm.used_blocks--;
@@ -166,6 +205,9 @@ uint32_t get_max_blocks() {
     return pmm.max_blocks;
 }
 
+/**
+ * Enables paging
+ */
 void enable_paging() {
     uint32_t cr0;
     asm volatile("mov %%cr0, %0" : "=r" (cr0));
@@ -173,20 +215,32 @@ void enable_paging() {
     asm volatile("mov %0, %%cr0" : : "r" (cr0));
 }
 
+/**
+ * Loads the pdbr register with a physical address to a page directory
+ */
 void load_pdbr(mm_addr_t addr) {
     asm volatile("mov %%eax, %%cr3" : : "a" (addr));
 }
 
+/**
+ * Gets the pdbr value
+ */
 mm_addr_t get_pdbr() {
     mm_addr_t ret;
     asm volatile("mov %%cr3, %%eax" : "=a" (ret));
     return ret;
 }
 
+/**
+ * Flushes the TLB cache
+ */
 void flush_tlb(vmm_addr_t addr) {
     asm volatile("cli; invlpg (%0); sti" : : "r" (addr));
 }
 
+/**
+ * Gets the value of the cr2 register
+ */
 int get_cr2() {
     int ret;
     asm volatile("mov %%cr2, %%eax" : "=a" (ret));

@@ -95,14 +95,24 @@ int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
     thread->esp = (uint32_t) stack;
     thread->stack_limit = ((uint32_t) thread->esp + PAGE_SIZE);
     
-    vmm_map_phys(pdir, thread->esp, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    void *mem = pmm_malloc();
+    if(!mem) {
+        printk("Failed allocating memory\n");
+        return -1;
+    }
+    vmm_map_phys(pdir, thread->esp, (mm_addr_t) mem, PAGE_PRESENT | PAGE_RW | PAGE_USER);
     vmm_map_phys(get_page_directory(), thread->esp, (uint32_t) get_phys_addr(pdir, thread->esp), PAGE_PRESENT | PAGE_RW);
     
     // build the kernel stack
     thread->esp_kernel = thread->stack_limit;
     thread->stack_kernel_limit = thread->esp_kernel + PAGE_SIZE;
     
-    vmm_map_phys(pdir, thread->esp_kernel, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    mem = pmm_malloc();
+    if(!mem) {
+        printk("Failed allocating memory\n");
+        return -1;
+    }
+    vmm_map_phys(pdir, thread->esp_kernel, (mm_addr_t) mem, PAGE_PRESENT | PAGE_RW | PAGE_USER);
     vmm_map_phys(get_page_directory(), thread->esp_kernel, (uint32_t) get_phys_addr(pdir, thread->esp_kernel), PAGE_PRESENT | PAGE_RW);
     
     return 1;
@@ -115,7 +125,7 @@ int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
     // build the heap
     vmm_addr_t heap = thread->stack_kernel_limit + (PAGE_SIZE * 3 * nthreads);
     
-    vmm_map_phys(pdir, heap, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    vmm_map_phys(pdir, heap, 0, PAGE_PRESENT | PAGE_RW | PAGE_USER); // TODO remove 0
     
     vmm_map_phys(get_page_directory(), (uint32_t) heap, (uint32_t) get_phys_addr(pdir, heap), PAGE_PRESENT | PAGE_RW);
     

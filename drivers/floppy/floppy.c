@@ -342,6 +342,7 @@ void floppy_lba_to_chs(int lba, int *head, int *track, int *sector) {
 
 int floppy_detect_drives() {
     outportb(0x70, 0x10);
+    sleep(100);
     uint8_t drives = inportb(0x71);
     int ndrives = 0;
     
