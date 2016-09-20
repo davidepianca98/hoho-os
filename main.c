@@ -29,7 +29,7 @@ int kmain(multiboot_info_t *info) {
     video_init(25, 80);
     clear();
     
-    pmm_init(1024 + info->mem_low + (info->mem_high * 64), (uint32_t *) info->mmap_addr, info->mmap_len);
+    pmm_init(info->mem_high + info->mem_low, (uint32_t *) info->mmap_addr, info->mmap_len);
     vmm_init();
     kheap_init();
     

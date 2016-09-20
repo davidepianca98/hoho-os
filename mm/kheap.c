@@ -28,7 +28,7 @@ heap_info_t heap_info;
  * Init the kernel heap memory
  */
 void kheap_init() {
-    heap_info.start = (vmm_addr_t *) ROUNDUP((uint32_t) &kernel_end, 4096);
+    heap_info.start = (vmm_addr_t *) ROUNDUP((uint32_t) get_mem_map() + get_max_blocks(), 4096);
     heap_info.size = HEAP_SIZE * BLOCKS_LEN;
     heap_info.used = sizeof(heap_header_t);
     heap_info.first_header = (heap_header_t *) heap_info.start;

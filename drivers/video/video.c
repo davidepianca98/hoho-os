@@ -29,7 +29,7 @@ void video_init(int h, int w) {
     y = 0;
     vram.heigth = h;
     vram.width = w;
-    vram.ram = (uint16_t*) 0xB8000;
+    vram.ram = (uint16_t *) 0xB8000;
     for(i = 0; i < h; i++)
         for(j = 0; j < w; j++)
             mm[i][j] = count++;

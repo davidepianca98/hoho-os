@@ -57,6 +57,7 @@ void *pmm_malloc();
 void *pmm_malloc_blocks(int n);
 void pmm_free(mm_addr_t *frame);
 
+mm_addr_t *get_mem_map();
 uint32_t get_mem_size();
 uint32_t get_used_blocks();
 uint32_t get_max_blocks();
@@ -65,6 +66,7 @@ void enable_paging();
 void load_pdbr(mm_addr_t addr);
 mm_addr_t get_pdbr();
 void flush_tlb(vmm_addr_t addr);
+int get_cr0();
 int get_cr2();
 
 #endif

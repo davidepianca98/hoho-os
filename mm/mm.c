@@ -20,51 +20,44 @@
 
 mem_info_t pmm;
 
+// 32KB for the bitmap to reserve up to 4GB
+static uint32_t bitmap[0x8000] __attribute__((aligned(0x1000)));
+
 /**
  * Initializes the physical memory manager
  * Every bit in the pmm.map indicates if a 4096 byte block is free or not
+ * mem_size is in KB
  */
 void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len) {
-    uint32_t kernel_size = &kernel_end - &kernel_start;
-
     // Get the blocks number
-    pmm.max_blocks = pmm.used_blocks = mem_size / BLOCKS_LEN;
+    pmm.max_blocks = pmm.used_blocks = mem_size / 4;
     // Set the address for the memory map
-    pmm.map = (uint32_t *) 0x100000 + (ROUNDUP(kernel_size, 4096));
+    pmm.map = bitmap;
     // Set all the blocks as used
-    memset(pmm.map, 0xF, pmm.max_blocks / BLOCKS_PER_BYTE);
+    memset(pmm.map, 0xFFFFFFFF, pmm.max_blocks / BLOCKS_PER_BYTE);
     
     mem_region_t *mm_reg = (mem_region_t *) mmap_addr;
-    mem_region_t *mm_lim = (mem_region_t *) mmap_addr + mmap_len;
     
     // Parse the memory map
-    while(mm_reg < mm_lim) {
+    while(mm_reg < (mem_region_t *) mmap_addr + mmap_len) {
         // Check if the memory region is available
-        if(mm_reg[0].type > 4 || mm_reg[0].type == 1)
-            pmm_init_reg(mm_reg[0].addr_low, mm_reg[0].len_low);
+        if(mm_reg->type == 1)
+            pmm_init_reg(mm_reg->addr_low, mm_reg->len_low);
         
         // Increment the pointer to the next map entry
-        mm_reg++;
-        
-        // Check if it's finished
-        if(mm_reg[0].addr_low == 0)
-            break;
+        mm_reg = (mem_region_t *) ((uint32_t) mm_reg + mm_reg->size + sizeof(mm_reg->size));
     }
-    pmm_deinit_reg(0x100000, kernel_size);
+    pmm_deinit_reg(0x100000, &kernel_end - &kernel_start);
     pmm_deinit_reg(0x0, 0x10000);
     pmm_deinit_reg((uint32_t) pmm.map, pmm.max_blocks);
-    pmm.size = (pmm.max_blocks - pmm.used_blocks) * BLOCKS_LEN;
+    pmm.size = (pmm.max_blocks - pmm.used_blocks) * 4;
 }
 
 /**
  * Sets the block as used
  */
 void pmm_set_bit(int bit) {
-    if((bit < 0) || ((uint32_t) bit > pmm.max_blocks)) {
-        printk("ERROR\n");
-        return;
-    }
-    pmm.map[bit / 32] |= 1 << (bit % 32);
+    pmm.map[bit / 32] |= (1 << (bit % 32));
 }
 
 /**
@@ -74,8 +67,11 @@ void pmm_unset_bit(int bit) {
     pmm.map[bit / 32] &= ~(1 << (bit % 32));
 }
 
+/**
+ * Gets the selected bit
+ */
 int pmm_get_bit(int bit) {
-    return pmm.map[bit / 32] & 1 << (bit % 32);
+    return pmm.map[bit / 32] & (1 << (bit % 32));
 }
 
 /**
@@ -150,7 +146,12 @@ void pmm_init_reg(mm_addr_t addr, uint32_t size) {
 void pmm_deinit_reg(mm_addr_t addr, uint32_t size) {
     uint32_t i;
     uint32_t blocks = size / BLOCKS_LEN;
-    uint32_t align = addr / BLOCKS_LEN;
+    uint32_t align;
+    if(addr == 0) {
+        align = 0;
+    } else {
+        align = addr / BLOCKS_LEN;
+    }
     for(i = 0; i < blocks; i++) {
         pmm_set_bit(align++);
         pmm.used_blocks++;
@@ -188,9 +189,13 @@ void *pmm_malloc_blocks(int n) {
 /**
  * Frees a block
  */
-void pmm_free(mm_addr_t *frame) {
-    pmm_unset_bit((uint32_t) frame / BLOCKS_LEN);
+void pmm_free(mm_addr_t *addr) {
+    pmm_unset_bit((uint32_t) addr / BLOCKS_LEN);
     pmm.used_blocks--;
+}
+
+mm_addr_t *get_mem_map() {
+    return pmm.map;
 }
 
 uint32_t get_mem_size() {
@@ -239,6 +244,15 @@ void flush_tlb(vmm_addr_t addr) {
 }
 
 /**
+ * Gets the value of the cr0 register
+ */
+int get_cr0() {
+    int ret;
+    asm volatile("mov %%cr0, %0" : "=r" (ret));
+    return ret;
+}
+
+/**
  * Gets the value of the cr2 register
  */
 int get_cr2() {
@@ -246,4 +260,3 @@ int get_cr2() {
     asm volatile("mov %%cr2, %%eax" : "=a" (ret));
     return ret;
 }
-

@@ -141,13 +141,9 @@ void print_file(file f) {
  * Prints memory info
  */
 void print_meminfo() {
-    printk("Total mem: %d MB\nFree mem: %d MB\n", get_mem_size() / 1024 / 1024, (get_max_blocks() - get_used_blocks()) * 4096 / 1024 / 1024);
-    printk("Heap size: %d MB Used heap: %d MB Free heap: %d MB\n", get_heap_size() / 1024 / 1024, get_used_heap() / 1024 / 1024, (get_heap_size() - get_used_heap()) / 1024 / 1024);
-    printk("Kernel start: 0x%x Kernel end: 0x%x Kernel size: %d\n", &kernel_start, &kernel_end, (uint32_t) (&kernel_end - &kernel_start));
-    uint32_t cr0 = 0;
-    asm volatile("mov %%cr0, %0" : "=r" (cr0));
-    printk("cr0: %x ", cr0);
-    printk("cr2: %x cr3: %x\n", get_cr2(), get_pdbr());
+    printk("Total mem: %d MB\nFree mem: %d MB\n", get_mem_size() / 1024, (get_max_blocks() - get_used_blocks()) * 4 / 1024);
+    printk("Heap size: %d MB Free heap: %d MB\n", get_heap_size() / 1024 / 1024, (get_heap_size() - get_used_heap()) / 1024 / 1024);
+    printk("cr0: %x cr2: %x cr3: %x\n", get_cr0, get_cr2(), get_pdbr());
 }
 
 /**

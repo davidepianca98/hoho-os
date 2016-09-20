@@ -82,7 +82,7 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
             vmm_map_phys(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW);
         }
         // Copy the file into memory
-        vfs_file_read(&f, (char *) (get_phys_addr(get_page_directory(), MEMORY_LOAD_ADDRESS + (j * 512)) + (j * 512)));
+        vfs_file_read(&f, (char *) (get_phys_addr(get_page_directory(), MEMORY_LOAD_ADDRESS + (j * 512))));
         file_size++;
         // Check if the page is finished
         if(file_size >= 8) {
@@ -107,8 +107,8 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     thread->image_base = ph[0].p_vaddr;
     
     // Relocate the executable program parts into the correct memory locations
-    int index = 0;
-    for(uint32_t i = 0; i < eh->entry_number_prog_header; i++) {
+    uint32_t i;
+    for(i = 0; i < eh->entry_number_prog_header; i++) {
         // If the part is executable
         if(ph[i].p_type == 1) {
             if(ph[i].p_mem_size == 0)
@@ -123,23 +123,20 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
                 }
                 // Map executable in proc page directory
                 vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW | PAGE_USER);
-
+                
                 // Map executable in kernel page directory
-                vmm_map_phys(get_page_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) get_phys_addr(pdir, ph[i].p_vaddr), PAGE_PRESENT | PAGE_RW);
+                vmm_map_phys(get_page_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW);
             }
             // Copy the executable into correct memory
             memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) MEMORY_LOAD_ADDRESS + ph[i].p_offset), ph[i].p_file_size);
             memset((void *) ph[i].p_vaddr + ph[i].p_file_size, 0, ph[i].p_mem_size - ph[i].p_file_size);
-            index = i;
         }
     }
-    // The size of the executable in memory is equal to the virtual address of the last section + the offset
-    // also round up
-    thread->image_size = (ph[index].p_vaddr + ph[index].p_file_size - thread->eip + PAGE_SIZE) >> 12 << 12;
+    // The size of the executable in memory is equal to the virtual address of the last section + the offset - the start
+    thread->image_size = (ph[i].p_vaddr + ph[i].p_file_size - thread->eip);
     
     // Unmap executable from kernel directory
     for(uint32_t i = 0; i < file_size; i++) {
-        vmm_unmap_phys_addr(get_page_directory(), (uint32_t) thread->image_base + (i * PAGE_SIZE));
         void *buf = get_phys_addr(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i + PAGE_SIZE));
         pmm_free(buf);
         vmm_unmap_phys_addr(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE));
@@ -147,4 +144,3 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     
     return 1;
 }
-

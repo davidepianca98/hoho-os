@@ -269,4 +269,3 @@ int proc_state(int id) {
     process_t *cur = get_proc_by_id(id);
     return cur->state;
 }
-

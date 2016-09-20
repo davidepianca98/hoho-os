@@ -20,7 +20,7 @@
 #include <lib/string.h>
 #include <drivers/video.h>
 
-page_dir_t kern_dir[1024] __attribute__((aligned(4096)));
+page_dir_t kern_dir[1024] __attribute__((aligned(1024)));
 page_dir_t *current_dir = 0;
 
 extern uint32_t kernel_start;
@@ -74,7 +74,7 @@ int vmm_create_page_table(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
         return 0;
     memset(block, 0, PAGE_SIZE);
     pdir[virt >> 22] = ((uint32_t) block) | flags;
-    vmm_map_phys(pdir, (vmm_addr_t) block, (mm_addr_t) block, flags); // redundant
+    vmm_map_phys(pdir, virt, (mm_addr_t) block, flags);
     return 1;
 }
 
@@ -101,7 +101,7 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
 void *get_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
     if(pdir[virt >> 22] == 0)
         return 0;
-    return (void *) (((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] & ~0xFFF);
+    return (void *) ((((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] & ~0xFFF) | (virt << 20 >> 20));
 }
 
 /**
@@ -125,11 +125,10 @@ page_dir_t *create_address_space() {
  * Unmaps the page table and frees the memory block
  */
 void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
-    if(pdir[virt >> 22] != 0) {
-        void *frame = (void *) (pdir[virt >> 22] & PAGE_FRAME_MASK);
-        pmm_free(frame);
-        pdir[virt >> 22] = 0;
-    }
+    void *frame = (void *) (pdir[virt >> 22] & PAGE_FRAME_MASK);
+    pmm_free(frame);
+    pdir[virt >> 22] = 0;
+    flush_tlb(virt);
 }
 
 /**
