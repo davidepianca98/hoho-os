@@ -79,10 +79,10 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
                 printk("Failed allocating memory\n");
                 return -1;
             }
-            vmm_map_phys(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW);
+            vmm_map_phys(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW);
         }
         // Copy the file into memory
-        vfs_file_read(&f, (char *) (get_phys_addr(get_page_directory(), MEMORY_LOAD_ADDRESS + (j * 512))));
+        vfs_file_read(&f, (char *) MEMORY_LOAD_ADDRESS + (j * 512));
         file_size++;
         // Check if the page is finished
         if(file_size >= 8) {
@@ -114,20 +114,20 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
             if(ph[i].p_mem_size == 0)
                 continue;
             
-            for(uint32_t j = 0; j < (ph[i].p_file_size / PAGE_SIZE) + 1; j++) {
+            // Allocate pages for the program executable
+            for(uint32_t j = 0; j <= ph[i].p_file_size / PAGE_SIZE; j++) {
                 // Reserve some memory
                 char *exec_mem = (char *) pmm_malloc();
                 if(!exec_mem) {
                     printk("Failed allocating memory\n");
                     return -1;
                 }
+                // Map executable in kernel page directory
+                vmm_map_phys(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW);
                 // Map executable in proc page directory
                 vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW | PAGE_USER);
-                
-                // Map executable in kernel page directory
-                vmm_map_phys(get_page_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW);
             }
-            // Copy the executable into correct memory
+            // Copy the executable into the correct memory location
             memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) MEMORY_LOAD_ADDRESS + ph[i].p_offset), ph[i].p_file_size);
             memset((void *) ph[i].p_vaddr + ph[i].p_file_size, 0, ph[i].p_mem_size - ph[i].p_file_size);
         }

@@ -20,7 +20,19 @@
 #include <lib/string.h>
 #include <drivers/video.h>
 
-page_dir_t kern_dir[1024] __attribute__((aligned(1024)));
+/*
+ * |---------------------------------------------|
+ * | 0x0 - 0x400000 identity mapped kernel space |
+ * | --------------------------------------------|
+ * | 0x400000 - 0x700000 paging structures space |
+ * |---------------------------------------------|
+ * | 0x700000 - 0x800000 elf loading space       |
+ * |---------------------------------------------|
+ * | 0x800000 - end programs address space       |
+ * |---------------------------------------------|
+ */
+
+page_dir_t kern_dir[1024] __attribute__((aligned(4096)));
 page_dir_t *current_dir = 0;
 
 extern uint32_t kernel_start;
@@ -71,10 +83,10 @@ page_dir_t *get_kern_directory() {
 int vmm_create_page_table(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
     void *block = pmm_malloc();
     if(!block)
-        return 0;
-    memset(block, 0, PAGE_SIZE);
+        return NULL;
     pdir[virt >> 22] = ((uint32_t) block) | flags;
-    vmm_map_phys(pdir, virt, (mm_addr_t) block, flags);
+    memset(block, 0, PAGE_SIZE);
+    vmm_map_phys(pdir, (vmm_addr_t) block, (mm_addr_t) block, flags); // probably needs a fix, not identity mapping
     return 1;
 }
 
@@ -82,7 +94,7 @@ int vmm_create_page_table(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
  * Maps the physical address to the virtual one
  */
 int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t flags) {
-    // if the page table is not present, create it
+    // If the page table is not present, create it
     if(pdir[virt >> 22] == 0) {
         if(!vmm_create_page_table(pdir, virt, flags)) {
             return NULL;
@@ -92,6 +104,7 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
     // Use the virtual address to get the index in the page directory and keep only the first 12 bits
     // which is the page table and use the virtual address to find the index in the page table
     ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | flags;
+    flush_tlb(virt);
     return 1;
 }
 
@@ -99,8 +112,8 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
  * Gets the physical address from the given virtual address
  */
 void *get_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
-    if(pdir[virt >> 22] == 0)
-        return 0;
+    if(pdir[virt >> 22] == NULL)
+        return NULL;
     return (void *) ((((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] & ~0xFFF) | (virt << 20 >> 20));
 }
 
@@ -111,7 +124,7 @@ page_dir_t *create_address_space() {
     // Allocate space for a page directory
     page_dir_t *pdir = (page_dir_t *) pmm_malloc();
     if(!pdir)
-        return 0;
+        return NULL;
     vmm_map_phys(get_kern_directory(), (uint32_t) pdir, (uint32_t) pdir, PAGE_PRESENT | PAGE_RW);
     memset(pdir, 0, PAGEDIR_SIZE);
     // Clone page directory
@@ -127,7 +140,7 @@ page_dir_t *create_address_space() {
 void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
     void *frame = (void *) (pdir[virt >> 22] & PAGE_FRAME_MASK);
     pmm_free(frame);
-    pdir[virt >> 22] = 0;
+    pdir[virt >> 22] = NULL;
     flush_tlb(virt);
 }
 
@@ -135,7 +148,7 @@ void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
  * Unmaps a physical address from the virtual
  */
 void vmm_unmap_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
-    if(pdir[virt >> 22] != 0) {
+    if(pdir[virt >> 22] != NULL) {
         vmm_unmap_page_table(pdir, virt);
     }
 }

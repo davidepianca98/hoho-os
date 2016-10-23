@@ -47,8 +47,7 @@ void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len) {
         // Increment the pointer to the next map entry
         mm_reg = (mem_region_t *) ((uint32_t) mm_reg + mm_reg->size + sizeof(mm_reg->size));
     }
-    pmm_deinit_reg(0x100000, &kernel_end - &kernel_start);
-    pmm_deinit_reg(0x0, 0x10000);
+    pmm_deinit_reg(0x0, 0x400000);
     pmm_deinit_reg((uint32_t) pmm.map, pmm.max_blocks);
     pmm.size = (pmm.max_blocks - pmm.used_blocks) * 4;
 }
@@ -214,10 +213,11 @@ uint32_t get_max_blocks() {
  * Enables paging
  */
 void enable_paging() {
-    uint32_t cr0;
-    asm volatile("mov %%cr0, %0" : "=r" (cr0));
-    cr0 |= 0x80000000;
-    asm volatile("mov %0, %%cr0" : : "r" (cr0));
+    uint32_t reg;
+    // Enable paging
+    asm volatile("mov %%cr0, %0" : "=r" (reg));
+    reg |= 0x80000000;
+    asm volatile("mov %0, %%cr0" : : "r" (reg));
 }
 
 /**

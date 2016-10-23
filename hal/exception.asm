@@ -45,12 +45,6 @@ extern ex_page_fault
 
 global pf_handle
 pf_handle:
-    pusha
-    push gs
-    push fs
-    push es
-    push ds
-    push esp
     call ex_page_fault
-    ret
-
+    pop eax
+    iretd

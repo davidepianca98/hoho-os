@@ -49,9 +49,11 @@ int strcmp(char *str1, char *str2) {
 }
 
 int strncmp(char *str1, char *str2, size_t len) {
-    while(len--)
-        if(*str1++ != *str2++)
+    while(len--) {
+        if(*str1++ != *str2++) {
             return *(uint8_t *) (str1 - 1) - *(uint8_t *) (str2 - 1);
+        }
+    }
     return 0;
 }
 

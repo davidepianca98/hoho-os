@@ -99,28 +99,21 @@ void ex_gpf(struct regs_error *re) {
         stop_thread(1);
 }
 
-static char *page_fault_errors[] = {
-    "Read on non present page",
-    "Page protection violation on read",
-    "Write on non present page",
-    "Page protection violation on write",
-    "User read on non present page",
-    "User page protection violation on read",
-    "User write on non present page",
-    "User page protection violation on write"
-};
-
-void ex_page_fault(struct regs_error *re) {
-    int addr = get_cr2();
-    printk("Page fault at addr: 0x%x\nError code: %b\n", addr, re->error);
-    printk("Error: %s\n", page_fault_errors[re->error]);
-    //printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
-    printk("Phys addr: 0x%x\n", get_phys_addr(get_kern_directory(), addr));
-    // If a PF occurs in kernel mode, we don't really want to continue
-    if(re->es == 0x10)
+void ex_page_fault() {
+    int virt_addr = get_cr2();
+    mm_addr_t phys_addr = (mm_addr_t) get_phys_addr(get_page_directory(), virt_addr);
+    
+    printk("\nPage fault\n");
+    // If the physical address is not mapped
+    if(!(phys_addr >> 12)) {
+        if(!((virt_addr >> 22) & PAGE_PRESENT)) {
+            vmm_create_page_table(get_page_directory(), virt_addr, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+        }
+    } else {
+        printk("\nPage fault at addr: 0x%x\n", virt_addr);
+        printk("Phys addr: 0x%x\n", phys_addr);
         panic();
-    else                    // if we were in user mode, just kill that thread or process, we need to fix this
-        stop_thread(1);
+    }
 }
 
 void ex_fpu_error() {
