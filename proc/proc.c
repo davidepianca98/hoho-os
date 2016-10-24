@@ -150,7 +150,7 @@ int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uin
         arguments++;
     }
     *argv1 = (uint32_t) argv;
-    vmm_unmap_phys_addr(get_page_directory(), (uint32_t) thread->heap);
+    vmm_unmap_phys(get_page_directory(), (uint32_t) thread->heap);
     
     return 1;
 }
@@ -209,36 +209,21 @@ void end_proc(int ret) {
     cur->state = PROC_STOPPED;
     
     for(int i = 0; i < cur->threads; i++) {
-        void *stack = get_phys_addr(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
-        vmm_unmap_phys_addr(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
-        pmm_free(stack);
-        
-        void *kernel_stack = get_phys_addr(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
-        vmm_unmap_phys_addr(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
-        pmm_free(kernel_stack);
-    
-        void *heap = get_phys_addr(cur->pdir, cur->thread_list->heap);
-        vmm_unmap_phys_addr(cur->pdir, cur->thread_list->heap);
-        pmm_free(heap);
+        vmm_unmap(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
+        vmm_unmap(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
+        vmm_unmap(cur->pdir, cur->thread_list->heap);
         
         cur->thread_list = cur->thread_list->next;
     }
 	
-    // remove the executable
+    // Remove the executable
     for(uint32_t page = 0; page < cur->thread_list->image_size / PAGE_SIZE; page++) {
-        uint32_t virt = cur->thread_list->image_base + (page * PAGE_SIZE);
-
-        uint32_t phys = (uint32_t) get_phys_addr(cur->pdir, virt);
-
-        vmm_unmap_phys_addr(cur->pdir, virt);
-        pmm_free((void *) phys);
+        vmm_unmap(cur->pdir, cur->thread_list->image_base + (page * PAGE_SIZE));
         // TODO need to remove threads from kheap
     }
 
-    // delete the page directory
+    // TODO Delete the page directory and page tables
     // TODO remove also page tables
-    uint32_t *phys = get_phys_addr(cur->pdir, (vmm_addr_t) cur->pdir);
-    pmm_free(phys);
 
     sched_state(1);
     enable_int();

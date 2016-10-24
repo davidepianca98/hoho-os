@@ -46,7 +46,8 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
 void *get_phys_addr(page_dir_t *pdir, vmm_addr_t virt);
 page_dir_t *create_address_space();
 void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt);
-void vmm_unmap_phys_addr(page_dir_t *pdir, vmm_addr_t virt);
+void vmm_unmap(page_dir_t *pdir, vmm_addr_t virt);
+void vmm_unmap_phys(page_dir_t *pdir, vmm_addr_t virt);
 
 void *page_table_malloc();
 void paging_set_bit(int bit);

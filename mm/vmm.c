@@ -166,11 +166,20 @@ void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
 }
 
 /**
- * Unmaps a physical address from the virtual
+ * Unmaps the physical address from the virtual and deallocates memory
  */
-void vmm_unmap_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
+void vmm_unmap(page_dir_t *pdir, vmm_addr_t virt) {
     if(pdir[virt >> 22] != NULL) {
         pmm_free(get_phys_addr(pdir, virt));
+        ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = 0;
+    }
+}
+
+/**
+ * Unmaps a physical address from the virtual
+ */
+void vmm_unmap_phys(page_dir_t *pdir, vmm_addr_t virt) {
+    if(pdir[virt >> 22] != NULL) {
         ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = 0;
     }
 }

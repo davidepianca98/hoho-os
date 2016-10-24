@@ -83,7 +83,7 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     
     // Unmap executable from kernel directory
     for(uint32_t i = 0; i < file_size; i++) {
-        vmm_unmap_phys_addr(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE));
+        vmm_unmap(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE));
     }
     
     return 1;
@@ -149,6 +149,10 @@ int load_elf_relocate(thread_t *thread, page_dir_t *pdir, elf_header_t *eh) {
             // Copy the executable into the correct memory location
             memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) MEMORY_LOAD_ADDRESS + ph[i].p_offset), ph[i].p_file_size);
             memset((void *) ph[i].p_vaddr + ph[i].p_file_size, 0, ph[i].p_mem_size - ph[i].p_file_size);
+            // Unmap from kernel directory
+            for(uint32_t j = 0; j <= ph[i].p_file_size / PAGE_SIZE; j++) {
+                vmm_unmap_phys(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE));
+            }
         }
     }
     // The size of the executable in memory is equal to the virtual address of the last section + the offset - the start
