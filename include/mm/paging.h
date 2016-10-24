@@ -47,5 +47,12 @@ page_dir_t *create_address_space();
 void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt);
 void vmm_unmap_phys_addr(page_dir_t *pdir, vmm_addr_t virt);
 
+void *page_table_malloc();
+void paging_set_bit(int bit);
+void paging_unset_bit(int bit);
+int paging_first_free();
+void page_table_free(void *addr);
+uint32_t *get_page_table_bitmap();
+
 #endif
 

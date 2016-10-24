@@ -93,6 +93,8 @@ typedef struct program_header {
 
 int elf_validate(elf_header_t *eh);
 int load_elf(char *name, thread_t *thread, page_dir_t *pdir);
+int load_elf_file(char *name);
+int load_elf_relocate(thread_t *thread, page_dir_t *pdir, elf_header_t *eh);
 
 #endif
 

@@ -36,7 +36,7 @@ int elf_validate(elf_header_t *eh) {
     }
     
     if(eh->instruction_set != ELF_X86) {
-        printk("Not an x86 machine\n");
+        printk("Not an x86 executable\n");
         return 0;
     }
     
@@ -46,7 +46,7 @@ int elf_validate(elf_header_t *eh) {
     }
     
     if(eh->machine != ELF_LITTLE_ENDIAN) {
-        printk("We only support little endian\n");
+        printk("Not a little endian executable\n");
         return 0;
     }
     
@@ -61,36 +61,12 @@ int elf_validate(elf_header_t *eh) {
  * Loads an ELF executable in memory and partially builds threads' info
  */
 int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
-    // Open the executable
-    file f = vfs_file_open(name, 0);
-    if((f.type == FS_NULL) || (f.type & FS_DIR)) {
-        printk("Failed opening file\n");
+    // Load the file into memory
+    uint32_t file_size = load_elf_file(name);
+    if(!file_size) {
+        printk("Error loading file\n");
         return -1;
     }
-    
-    // Load the executable in memory
-    uint32_t file_size = 0;
-    uint32_t j = 0;
-    while(f.eof != 1) {
-        // The executable needs more memory, so reserve it
-        if(file_size == 0) {
-            char *file_mem = (char *) pmm_malloc();
-            if(!file_mem) {
-                printk("Failed allocating memory\n");
-                return -1;
-            }
-            vmm_map_phys(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW);
-        }
-        // Copy the file into memory
-        vfs_file_read(&f, (char *) MEMORY_LOAD_ADDRESS + (j * 512));
-        file_size++;
-        // Check if the page is finished
-        if(file_size >= 8) {
-            file_size = 0;
-        }
-        j++;
-    }
-    vfs_file_close(&f);
     
     // Check the elf header
     elf_header_t *eh = (elf_header_t *) MEMORY_LOAD_ADDRESS;
@@ -99,6 +75,60 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
         return -1;
     }
     
+    // Relocate executable parts
+    if(!load_elf_relocate(thread, pdir, eh)) {
+        printk("Error relocating\n");
+        return -1;
+    }
+    
+    // Unmap executable from kernel directory
+    for(uint32_t i = 0; i < file_size; i++) {
+        pmm_free(get_phys_addr(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE)));
+        vmm_unmap_phys_addr(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE));
+    }
+    
+    return 1;
+}
+
+/**
+ * Moves the file from the disk to RAM
+ */
+int load_elf_file(char *name) {
+    // Open the executable
+    file f = vfs_file_open(name, "r");
+    if((f.type == FS_NULL) || (f.type & FS_DIR)) {
+        printk("Failed opening file\n");
+        return -1;
+    }
+    
+    // Load the executable in memory
+    uint32_t j = 0;
+    while(f.eof != 1) {
+        // The executable needs more memory, so reserve it
+        if(((j + 8) % 8) == 0) {
+            char *file_mem = (char *) pmm_malloc();
+            if(!file_mem) {
+                printk("Failed allocating memory\n");
+                return -1;
+            }
+            if(!vmm_map_phys(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW)) {
+                printk("Error mapping memory");
+                return -1;
+            }
+        }
+        // Copy the file into memory
+        vfs_file_read(&f, (char *) MEMORY_LOAD_ADDRESS + (j * 512));
+        printk("#");
+        j++;
+    }
+    vfs_file_close(&f);
+    return j;
+}
+
+/**
+ * Moves the executable parts to the correct virtual address for execution
+ */
+int load_elf_relocate(thread_t *thread, page_dir_t *pdir, elf_header_t *eh) {
     // Get the program header
     program_header_t *ph = (program_header_t *) ((uint32_t) eh + eh->program_header);
     // Get the entry point of the program
@@ -119,28 +149,25 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
                 // Reserve some memory
                 char *exec_mem = (char *) pmm_malloc();
                 if(!exec_mem) {
-                    printk("Failed allocating memory\n");
+                    printk("Failed allocating memory for the process\n");
                     return -1;
                 }
-                // Map executable in kernel page directory
-                vmm_map_phys(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW);
-                // Map executable in proc page directory
-                vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+                // Map executable in kernel and proc page directory
+                if(!vmm_map_phys(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW) ||
+                    !vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
+                    printk("Error mapping memory");
+                    return -1;
+                }
+                printk("#");
             }
             // Copy the executable into the correct memory location
             memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) MEMORY_LOAD_ADDRESS + ph[i].p_offset), ph[i].p_file_size);
+            printk("*");
             memset((void *) ph[i].p_vaddr + ph[i].p_file_size, 0, ph[i].p_mem_size - ph[i].p_file_size);
+            printk("*");
         }
     }
     // The size of the executable in memory is equal to the virtual address of the last section + the offset - the start
     thread->image_size = (ph[i].p_vaddr + ph[i].p_file_size - thread->eip);
-    
-    // Unmap executable from kernel directory
-    for(uint32_t i = 0; i < file_size; i++) {
-        void *buf = get_phys_addr(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i + PAGE_SIZE));
-        pmm_free(buf);
-        vmm_unmap_phys_addr(get_page_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE));
-    }
-    
     return 1;
 }

@@ -44,8 +44,7 @@ int start_proc(char *name, char *arguments) {
     proc->thread_list->main = 1;
     proc->thread_list->parent = (void *) proc;
 
-    if(load_elf(name, proc->thread_list, proc->pdir) == -1) {
-        printk("Failed loading file\n");
+    if(!load_elf(name, proc->thread_list, proc->pdir)) {
         sched_state(1);
         return PROC_STOPPED;
     }

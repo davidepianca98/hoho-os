@@ -83,7 +83,7 @@ static char* num = "123456789";
 uint8_t keyboard_to_ascii(uint8_t key){
 	if(key == 0x1C) return '\n';
 	if(key == 0x39) return ' ';
-	if(key == 0xE) return '\r';
+	if(key == 0xE) return '\b';
 	if(key == POINT_RELEASED) return '.';
 	if(key == SLASH_RELEASED) return '/';
 	if(key == ZERO_PRESSED) return '0';

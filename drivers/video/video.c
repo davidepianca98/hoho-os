@@ -52,7 +52,7 @@ void printk(char *buffer, ...) {
         switch(str[i]) {
             case '\0':
                 return;
-            case '\r':
+            case '\b':
                 vram.ram[mm[y][--x]] = (uint16_t) 3872;
                 i++;
                 break;
@@ -61,6 +61,10 @@ void printk(char *buffer, ...) {
                 y++;
                 x = 0;
                 check();
+                break;
+            case '\r':
+                i++;
+                x = 0;
                 break;
             default:
                 vram.ram[mm[y][x++]] = (uint16_t) (3840 | str[i++]);

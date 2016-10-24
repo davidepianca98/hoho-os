@@ -15,21 +15,22 @@
  */
 
 #include <drivers/io.h>
-#include <mm/mm.h>
-#include <mm/paging.h>
+#include <mm/memory.h>
 #include <lib/string.h>
 #include <drivers/video.h>
 
 /*
- * |---------------------------------------------|
- * | 0x0 - 0x400000 identity mapped kernel space |
- * | --------------------------------------------|
- * | 0x400000 - 0x700000 paging structures space |
- * |---------------------------------------------|
- * | 0x700000 - 0x800000 elf loading space       |
- * |---------------------------------------------|
- * | 0x800000 - end programs address space       |
- * |---------------------------------------------|
+ * |------------------------------------------------|
+ * | 0x0 - 0x400000 -> identity mapped kernel space |
+ * | kernel_end - 0x200000 -> kernel heap           |
+ * | 0x200000 - 0x400000 -> paging structures       |
+ * | -----------------------------------------------|
+ * | 0x400000 - 0x700000 -> free space              |
+ * |------------------------------------------------|
+ * | 0x700000 - 0x800000 -> elf loading space       |
+ * |------------------------------------------------|
+ * | 0x800000 - end -> programs address space       |
+ * |------------------------------------------------|
  */
 
 page_dir_t kern_dir[1024] __attribute__((aligned(4096)));
@@ -43,6 +44,7 @@ extern uint32_t kernel_end;
  */
 void vmm_init() {
     memset(kern_dir, 0, PAGEDIR_SIZE);
+    memset((void *) get_page_table_bitmap(), 0, 0x10);
     map_kernel(kern_dir);
     change_page_directory(kern_dir);
     enable_paging();
@@ -81,12 +83,10 @@ page_dir_t *get_kern_directory() {
  * Creates a page table for the given virtual address
  */
 int vmm_create_page_table(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
-    void *block = pmm_malloc();
-    if(!block)
+    void *pt = page_table_malloc();
+    if(!pt)
         return NULL;
-    pdir[virt >> 22] = ((uint32_t) block) | flags;
-    memset(block, 0, PAGE_SIZE);
-    vmm_map_phys(pdir, (vmm_addr_t) block, (mm_addr_t) block, flags); // probably needs a fix, not identity mapping
+    pdir[virt >> 22] = ((uint32_t) pt) | flags;
     return 1;
 }
 
@@ -122,15 +122,11 @@ void *get_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
  */
 page_dir_t *create_address_space() {
     // Allocate space for a page directory
-    page_dir_t *pdir = (page_dir_t *) pmm_malloc();
+    page_dir_t *pdir = (page_dir_t *) page_table_malloc();
     if(!pdir)
         return NULL;
-    vmm_map_phys(get_kern_directory(), (uint32_t) pdir, (uint32_t) pdir, PAGE_PRESENT | PAGE_RW);
-    memset(pdir, 0, PAGEDIR_SIZE);
-    // Clone page directory
+    // Clone page directory, needs a function to clone for real
     memcpy(pdir, kern_dir, PAGEDIR_SIZE);
-    // Self map the directory
-    vmm_map_phys(pdir, (uint32_t) pdir, (uint32_t) pdir, PAGE_PRESENT | PAGE_RW | PAGE_USER);
     return pdir;
 }
 
@@ -139,7 +135,7 @@ page_dir_t *create_address_space() {
  */
 void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
     void *frame = (void *) (pdir[virt >> 22] & PAGE_FRAME_MASK);
-    pmm_free(frame);
+    page_table_free(frame);
     pdir[virt >> 22] = NULL;
     flush_tlb(virt);
 }

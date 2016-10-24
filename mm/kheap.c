@@ -20,7 +20,7 @@
 #include <mm/paging.h>
 #include <drivers/video.h>
 
-#define HEAP_SIZE 256 // 256 pages, 256 * 4 KB = 1 MB
+#define HEAP_END 0x200000
 
 heap_info_t heap_info;
 
@@ -28,8 +28,8 @@ heap_info_t heap_info;
  * Init the kernel heap memory
  */
 void kheap_init() {
-    heap_info.start = (vmm_addr_t *) ROUNDUP((uint32_t) get_mem_map() + get_max_blocks(), 4096);
-    heap_info.size = HEAP_SIZE * BLOCKS_LEN;
+    heap_info.start = (vmm_addr_t *) &kernel_end;
+    heap_info.size = HEAP_END - (int) &kernel_end;
     heap_info.used = sizeof(heap_header_t);
     heap_info.first_header = (heap_header_t *) heap_info.start;
     heap_info.first_header->magic = HEAP_MAGIC;

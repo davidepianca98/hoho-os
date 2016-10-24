@@ -58,7 +58,7 @@ void console_run() {
         keyboard_invalidate_lastkey();
         if(character_check(c)) {
             buffer[buffer_counter++] = c;
-        } else if(c == '\r') { // backspace
+        } else if(c == '\b') { // backspace
             if(buffer_counter > 0) {
                 buffer_counter--;
             } else {
