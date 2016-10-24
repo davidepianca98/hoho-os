@@ -23,6 +23,21 @@
 #include <hal/hal.h>
 #include <lib/string.h>
 
+/*
+ * Process in memory
+ * |-----------image_start---------------|
+ * |                                     |
+ * |-------image_start + image_size------|
+ * |              padding                |
+ * |------------user stack---------------| ---|
+ * |               4096B                 |    |
+ * |-----------kernel stack--------------|    |
+ * |               4096B                 |    | x number of threads
+ * |-------------user heap---------------|    |
+ * |               4096B                 |    |
+ * |-------------------------------------| ---|
+ */
+
 /**
  * Starts a new process
  */
@@ -88,16 +103,14 @@ int start_proc(char *name, char *arguments) {
  *Builds the stack for a thread
  */
 int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
-    // build the user stack
-    void *stack = (void *) (thread->image_base + thread->image_size + (PAGE_SIZE * 3 * nthreads));
-
-    thread->esp = (uint32_t) stack;
+    // Build the user stack
+    thread->esp = (uint32_t) (thread->image_base + thread->image_size + (PAGE_SIZE * 3 * nthreads));
     thread->stack_limit = ((uint32_t) thread->esp + PAGE_SIZE);
     
     vmm_map(get_kern_directory(), thread->esp, PAGE_PRESENT | PAGE_RW);
     vmm_map_phys(pdir, thread->esp, (uint32_t) get_phys_addr(get_kern_directory(), thread->esp), PAGE_PRESENT | PAGE_RW | PAGE_USER);
     
-    // build the kernel stack
+    // Build the kernel stack
     thread->esp_kernel = thread->stack_limit;
     thread->stack_kernel_limit = thread->esp_kernel + PAGE_SIZE;
     
@@ -223,7 +236,6 @@ void end_proc(int ret) {
     }
 
     // TODO Delete the page directory and page tables
-    // TODO remove also page tables
 
     sched_state(1);
     enable_int();

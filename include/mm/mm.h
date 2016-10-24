@@ -23,8 +23,6 @@
 #define BLOCKS_LEN 4096
 #define BYTE_SET 0xFFFFFFFF
 
-#define	ROUNDUP(x, align)		(-(-(x) & -(align)))
-
 typedef uint32_t mm_addr_t;
 
 typedef uint32_t vmm_addr_t;
