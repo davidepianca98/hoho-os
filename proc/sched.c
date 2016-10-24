@@ -111,19 +111,16 @@ void sched_init() {
     main_thread->parent = (void *) proc;
     proc->pdir = get_kern_directory();
     main_thread->eip = (uint32_t) &main_proc;
-    void *stack = (void *) pmm_malloc();
     
-    vmm_map_phys(proc->pdir, (uint32_t) stack, (uint32_t) stack, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    vmm_map(proc->pdir, (vmm_addr_t) 0x400000, PAGE_PRESENT | PAGE_RW | PAGE_USER);
 
-    main_thread->esp = (uint32_t) stack;
+    main_thread->esp = (uint32_t) get_phys_addr(proc->pdir, 0x400000);
     main_thread->stack_limit = ((uint32_t) main_thread->esp + PAGE_SIZE);
-    
-    stack = (void *) pmm_malloc();
     
     main_thread->esp_kernel = main_thread->stack_limit;
     main_thread->stack_kernel_limit = main_thread->esp_kernel + PAGE_SIZE;
     
-    vmm_map_phys(proc->pdir, main_thread->esp_kernel, (uint32_t) stack, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    vmm_map(proc->pdir, main_thread->esp_kernel, PAGE_PRESENT | PAGE_RW | PAGE_USER);
     
     uint32_t *stackp = (uint32_t *) main_thread->stack_limit;
     *--stackp = 0x202;                    // eflags

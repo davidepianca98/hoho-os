@@ -91,6 +91,31 @@ int vmm_create_page_table(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
 }
 
 /**
+ * Allocates a chunk of memory and maps it to the virtual address
+ */
+int vmm_map(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
+    // Get a memory block
+    mm_addr_t phys = (mm_addr_t) pmm_malloc();
+    if(!phys) {
+        printk("Failed allocating memory\n");
+        return NULL;
+    }
+    
+    // If the page table is not present, create it
+    if(pdir[virt >> 22] == 0) {
+        if(!vmm_create_page_table(pdir, virt, flags)) {
+            return NULL;
+        }
+    }
+    // Map the address to the page table
+    // Use the virtual address to get the index in the page directory and keep only the first 12 bits
+    // which is the page table and use the virtual address to find the index in the page table
+    ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | flags;
+    flush_tlb(virt);
+    return 1;
+}
+
+/**
  * Maps the physical address to the virtual one
  */
 int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t flags) {
@@ -145,7 +170,8 @@ void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
  */
 void vmm_unmap_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
     if(pdir[virt >> 22] != NULL) {
-        vmm_unmap_page_table(pdir, virt);
+        pmm_free(get_phys_addr(pdir, virt));
+        ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = 0;
     }
 }
 

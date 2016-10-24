@@ -83,7 +83,6 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     
     // Unmap executable from kernel directory
     for(uint32_t i = 0; i < file_size; i++) {
-        pmm_free(get_phys_addr(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE)));
         vmm_unmap_phys_addr(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (i * PAGE_SIZE));
     }
     
@@ -106,19 +105,13 @@ int load_elf_file(char *name) {
     while(f.eof != 1) {
         // The executable needs more memory, so reserve it
         if(((j + 8) % 8) == 0) {
-            char *file_mem = (char *) pmm_malloc();
-            if(!file_mem) {
-                printk("Failed allocating memory\n");
-                return -1;
-            }
-            if(!vmm_map_phys(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), (uint32_t) file_mem, PAGE_PRESENT | PAGE_RW)) {
+            if(!vmm_map(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), PAGE_PRESENT | PAGE_RW)) {
                 printk("Error mapping memory");
                 return -1;
             }
         }
         // Copy the file into memory
         vfs_file_read(&f, (char *) MEMORY_LOAD_ADDRESS + (j * 512));
-        printk("#");
         j++;
     }
     vfs_file_close(&f);
@@ -146,25 +139,16 @@ int load_elf_relocate(thread_t *thread, page_dir_t *pdir, elf_header_t *eh) {
             
             // Allocate pages for the program executable
             for(uint32_t j = 0; j <= ph[i].p_file_size / PAGE_SIZE; j++) {
-                // Reserve some memory
-                char *exec_mem = (char *) pmm_malloc();
-                if(!exec_mem) {
-                    printk("Failed allocating memory for the process\n");
-                    return -1;
-                }
                 // Map executable in kernel and proc page directory
-                if(!vmm_map_phys(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW) ||
-                    !vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) exec_mem, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
+                if(!vmm_map(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), PAGE_PRESENT | PAGE_RW) ||
+                   !vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) get_phys_addr(get_kern_directory(), ph[i].p_vaddr), PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
                     printk("Error mapping memory");
                     return -1;
                 }
-                printk("#");
             }
             // Copy the executable into the correct memory location
             memcpy((uint32_t *) ph[i].p_vaddr, (uint32_t *) ((uint32_t) MEMORY_LOAD_ADDRESS + ph[i].p_offset), ph[i].p_file_size);
-            printk("*");
             memset((void *) ph[i].p_vaddr + ph[i].p_file_size, 0, ph[i].p_mem_size - ph[i].p_file_size);
-            printk("*");
         }
     }
     // The size of the executable in memory is equal to the virtual address of the last section + the offset - the start
