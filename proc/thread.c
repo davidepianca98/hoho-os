@@ -121,17 +121,9 @@ void stop_thread(int code) {
     cur->thread_list->next->prec = cur->thread_list->prec;
     cur->thread_list->prec->next = cur->thread_list->next;
     
-    void *stack = get_phys_addr(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
-    vmm_unmap_phys_addr(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
-    pmm_free(stack);
-    
-    void *kernel_stack = get_phys_addr(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
-    vmm_unmap_phys_addr(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
-    pmm_free(kernel_stack);
-
-    void *heap = get_phys_addr(cur->pdir, cur->thread_list->heap);
-    vmm_unmap_phys_addr(cur->pdir, cur->thread_list->heap);
-    pmm_free(heap);
+    vmm_unmap(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
+    vmm_unmap(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
+    vmm_unmap(cur->pdir, cur->thread_list->heap);
     
     kfree(thread);
     
