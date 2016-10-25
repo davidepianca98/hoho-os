@@ -97,7 +97,7 @@ int vmm_map(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
     // Get a memory block
     mm_addr_t phys = (mm_addr_t) pmm_malloc();
     if(!phys) {
-        printk("Failed allocating memory\n");
+        printk("VMM: Failed allocating memory %x\n", phys);
         return NULL;
     }
     
@@ -139,7 +139,7 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
 void *get_phys_addr(page_dir_t *pdir, vmm_addr_t virt) {
     if(pdir[virt >> 22] == NULL)
         return NULL;
-    return (void *) ((((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] & ~0xFFF) | (virt << 20 >> 20));
+    return (void *) (((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] >> 12 << 12);
 }
 
 /**
@@ -150,7 +150,7 @@ page_dir_t *create_address_space() {
     page_dir_t *pdir = (page_dir_t *) page_table_malloc();
     if(!pdir)
         return NULL;
-    // Clone page directory, needs a function to clone for real
+    // Clone page directory
     memcpy(pdir, kern_dir, PAGEDIR_SIZE);
     return pdir;
 }

@@ -21,7 +21,7 @@
 mem_info_t pmm;
 
 // 32KB for the bitmap to reserve up to 4GB
-static uint32_t bitmap[0x8000] __attribute__((aligned(0x1000)));
+static uint32_t bitmap[BITMAP_LEN] __attribute__((aligned(BLOCKS_LEN)));
 
 /**
  * Initializes the physical memory manager
@@ -34,7 +34,7 @@ void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len) {
     // Set the address for the memory map
     pmm.map = bitmap;
     // Set all the blocks as used
-    memset(pmm.map, 0xFFFFFFFF, pmm.max_blocks / BLOCKS_PER_BYTE);
+    memset(pmm.map, BYTE_SET, BITMAP_LEN);
     
     mem_region_t *mm_reg = (mem_region_t *) mmap_addr;
     
@@ -48,7 +48,6 @@ void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len) {
         mm_reg = (mem_region_t *) ((uint32_t) mm_reg + mm_reg->size + sizeof(mm_reg->size));
     }
     pmm_deinit_reg(0x0, 0x400000);
-    pmm_deinit_reg((uint32_t) pmm.map, pmm.max_blocks);
     pmm.size = (pmm.max_blocks - pmm.used_blocks) * 4;
 }
 
@@ -67,13 +66,6 @@ void pmm_unset_bit(int bit) {
 }
 
 /**
- * Gets the selected bit
- */
-int pmm_get_bit(int bit) {
-    return pmm.map[bit / 32] & (1 << (bit % 32));
-}
-
-/**
  * Gets the first free block
  */
 int pmm_first_free() {
@@ -85,39 +77,6 @@ int pmm_first_free() {
             for(j = 0; j < 32; j++) {
                 if(!(pmm.map[i] & (1 << j))) {
                     return (i * 32) + j;
-                }
-            }
-        }
-    }
-    return -1;
-}
-
-/**
- * Gets the first free n contiguous blocks
- */
-int pmm_first_free_contig(int n) {
-    uint32_t i;
-    int j, temp, free;
-    
-    if(n <= 0)
-        return -1;
-    else if(n == 1)
-        return pmm_first_free();
-    
-    for(i = 0; i < pmm.max_blocks / 32; i++) {
-        if(pmm.map[i] != BYTE_SET) {
-            for(j = 0; j < 32; j++) {
-                if(!(pmm.map[i] & (1 << j))) {
-                    temp = (i * 32) + (1 << j);
-                    free = 0;
-                    for(int k = 0; k <= n; k++) {
-                        if(!pmm_get_bit(temp + k)) {
-                            free++;
-                        }
-                        if(free == n) {
-                            return (i * 32) + j;
-                        }
-                    }
                 }
             }
         }
@@ -155,7 +114,6 @@ void pmm_deinit_reg(mm_addr_t addr, uint32_t size) {
         pmm_set_bit(align++);
         pmm.used_blocks++;
     }
-    pmm_set_bit(0);
 }
 
 /**
@@ -163,25 +121,10 @@ void pmm_deinit_reg(mm_addr_t addr, uint32_t size) {
  */
 void *pmm_malloc() {
     int p = pmm_first_free();
-    if(p == -1)
+    if(!p)
         return NULL;
     pmm_set_bit(p);
     pmm.used_blocks++;
-    return (void *) (BLOCKS_LEN * p);
-}
-
-/**
- * Returns n contiguous usable blocks
- */
-void *pmm_malloc_blocks(int n) {
-    int i;
-    int p = pmm_first_free_contig(n);
-    if(p == -1)
-        return NULL;
-    for(i = 0; i < n; i++) {
-        pmm_set_bit(p + i);
-        pmm.used_blocks++;
-    }
     return (void *) (BLOCKS_LEN * p);
 }
 

@@ -106,8 +106,9 @@ void ex_page_fault() {
     printk("Page fault %x\n", virt_addr);
     // If the physical address is not mapped
     if(!(phys_addr)) {
-        if(!((virt_addr >> 22) & PAGE_PRESENT)) {
-            vmm_create_page_table(get_page_directory(), virt_addr, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+        if(!vmm_map(get_page_directory(), virt_addr, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
+            printk("Couldn't create page table\n");
+            panic();
         }
     } else {
         printk("\nPage fault at addr: 0x%x\n", virt_addr);

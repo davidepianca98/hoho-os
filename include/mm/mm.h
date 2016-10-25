@@ -22,6 +22,7 @@
 #define BLOCKS_PER_BYTE 8
 #define BLOCKS_LEN 4096
 #define BYTE_SET 0xFFFFFFFF
+#define BITMAP_LEN 0x8000
 
 typedef uint32_t mm_addr_t;
 
@@ -46,13 +47,10 @@ typedef struct memory_region {
 void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len);
 void pmm_set_bit(int bit);
 void pmm_unset_bit(int bit);
-int pmm_get_bit(int bit);
 int pmm_first_free();
-int pmm_first_free_contig(int n);
 void pmm_init_reg(mm_addr_t addr, uint32_t size);
 void pmm_deinit_reg(mm_addr_t addr, uint32_t size);
 void *pmm_malloc();
-void *pmm_malloc_blocks(int n);
 void pmm_free(mm_addr_t *frame);
 
 mm_addr_t *get_mem_map();
