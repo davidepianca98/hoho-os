@@ -132,6 +132,8 @@ void *pmm_malloc() {
  * Frees a block
  */
 void pmm_free(mm_addr_t *addr) {
+    if((uint32_t) addr < 0x400000)
+        return;
     pmm_unset_bit((uint32_t) addr / BLOCKS_LEN);
     pmm.used_blocks--;
 }

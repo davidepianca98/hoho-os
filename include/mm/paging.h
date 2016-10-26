@@ -45,6 +45,7 @@ int vmm_map(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags);
 int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t flags);
 void *get_phys_addr(page_dir_t *pdir, vmm_addr_t virt);
 page_dir_t *create_address_space();
+void delete_address_space(page_dir_t *pdir);
 void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt);
 void vmm_unmap(page_dir_t *pdir, vmm_addr_t virt);
 void vmm_unmap_phys(page_dir_t *pdir, vmm_addr_t virt);

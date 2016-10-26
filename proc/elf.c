@@ -102,6 +102,7 @@ int load_elf_file(char *name) {
     
     // Load the executable in memory
     uint32_t j = 0;
+    int file_size = 0;
     while(f.eof != 1) {
         // The executable needs more memory, so reserve it
         if(((j + 8) % 8) == 0) {
@@ -109,13 +110,14 @@ int load_elf_file(char *name) {
                 printk("Error mapping memory");
                 return -1;
             }
+            file_size++;
         }
         // Copy the file into memory
         vfs_file_read(&f, (char *) MEMORY_LOAD_ADDRESS + (j * 512));
         j++;
     }
     vfs_file_close(&f);
-    return j;
+    return file_size;
 }
 
 /**

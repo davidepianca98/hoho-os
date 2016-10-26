@@ -26,9 +26,9 @@
 void heap_init(vmm_addr_t *addr) {
     heap_info_t *heap_info = (heap_info_t *) addr;
     heap_info->start = addr + sizeof(heap_info_t);
-    heap_info->size = 4096;
-    heap_info->used = sizeof(heap_header_t) + sizeof(heap_info_t);
-    heap_info->first_header = (heap_header_t *) addr + sizeof(heap_info_t);
+    heap_info->size = PAGE_SIZE - sizeof(heap_info_t);
+    heap_info->used = sizeof(heap_header_t);
+    heap_info->first_header = (heap_header_t *) heap_info->start;
     heap_info->first_header->magic = HEAP_MAGIC;
     heap_info->first_header->size = heap_info->size;
     heap_info->first_header->is_free = 1;
@@ -46,7 +46,7 @@ void ufree(void *ptr, vmm_addr_t *heap) {
         head->is_free = 1;
         heap_info->used -= head->size;
         
-        // merge contiguous free sections
+        // Merge contiguous free sections
         heap_header_t *app = head->next;
         while((app != NULL) && (app->is_free == 1)) {
             head->size += app->size + sizeof(heap_header_t);

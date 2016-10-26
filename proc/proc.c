@@ -146,9 +146,10 @@ int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
  */
 int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uint32_t *argv1) {
     *argc = 1;
-    char **argv = (char **) umalloc(strlen(name) + strlen(arguments) + 1, (vmm_addr_t *) thread->heap);
-    strcpy(argv[0], name);
+    char *argv = (char *) umalloc(strlen(name) + strlen(arguments) + 1, (vmm_addr_t *) thread->heap);
+    strcpy(argv, name);
     
+    // TODO fix arguments
     while(*arguments) {
         char *p = strchr(arguments, ' ');
         if(p == NULL) {
@@ -166,7 +167,7 @@ int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uin
         arguments++;
     }
     *argv1 = (uint32_t) argv;
-    vmm_unmap_phys(get_page_directory(), (uint32_t) thread->heap);
+    vmm_unmap_phys(get_kern_directory(), (uint32_t) thread->heap);
     
     return 1;
 }
@@ -175,10 +176,8 @@ int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uin
  * Fills the stack with register values
  */
 int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
-    // fill kernel stack
+    // Fill kernel stack
     uint32_t *stackp = (uint32_t *) thread->stack_kernel_limit;
-    *--stackp = 0x23;                                       // ss
-    *--stackp = thread->stack_limit - 12;                   // esp
     *--stackp = 0x202;                                      // eflags
     *--stackp = 0x1B;                                       // cs
     *--stackp = thread->eip;                                // eip
@@ -188,19 +187,20 @@ int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
     *--stackp = 0;                                          // edx
     *--stackp = 0;                                          // esi
     *--stackp = 0;                                          // edi
-    *--stackp = thread->esp + PAGE_SIZE;                    // ebp
+    *--stackp = thread->stack_limit;                        // ebp
     *--stackp = 0x23;                                       // ds
     *--stackp = 0x23;                                       // es
     *--stackp = 0x23;                                       // fs
     *--stackp = 0x23;                                       // gs
     thread->esp_kernel = (uint32_t) stackp;
     
-    // fill user stack
+    // Fill user stack
     stackp = (uint32_t *) thread->stack_limit;
     *--stackp = argv;
     *--stackp = argc;
-    *--stackp = (uint32_t) &end_process;                    // the process needs to know where to return
+    *--stackp = (uint32_t) &end_process;                    // The process needs to know where to return
     thread->esp = (uint32_t) stackp;
+    vmm_unmap_phys(get_kern_directory(), (uint32_t) thread->esp);
     
     return 1;
 }
@@ -224,18 +224,20 @@ void end_proc(int ret) {
     
     cur->state = PROC_STOPPED;
     
+    // Remove the executable
+    for(uint32_t page = 0; page < cur->thread_list->image_size / PAGE_SIZE; page++) {
+        vmm_unmap(cur->pdir, cur->thread_list->image_base + (page * PAGE_SIZE));
+    }
+    
     for(int i = 0; i < cur->threads; i++) {
         vmm_unmap(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
         vmm_unmap(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
         vmm_unmap(cur->pdir, cur->thread_list->heap);
+        delete_address_space(cur->pdir);
         
+        thread_t *thread = cur->thread_list;
         cur->thread_list = cur->thread_list->next;
-    }
-	
-    // Remove the executable
-    for(uint32_t page = 0; page < cur->thread_list->image_size / PAGE_SIZE; page++) {
-        vmm_unmap(cur->pdir, cur->thread_list->image_base + (page * PAGE_SIZE));
-        // TODO need to remove threads from kheap
+        kfree(thread);
     }
 
     // TODO Delete the page directory and page tables

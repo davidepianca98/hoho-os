@@ -36,9 +36,6 @@ void kheap_init() {
     heap_info.first_header->size = heap_info.size;
     heap_info.first_header->is_free = 1;
     heap_info.first_header->next = NULL;
-    
-    // Reserve the area for the kernel heap
-    pmm_deinit_reg((mm_addr_t) heap_info.start, heap_info.size);
 }
 
 void *kmalloc(size_t len) {
@@ -49,10 +46,9 @@ void kfree(void *ptr) {
     heap_header_t *head = ptr - sizeof(heap_header_t);
     if((head->is_free == 0) && (head->magic == HEAP_MAGIC)) {
         head->is_free = 1;
-        //print_header(head);
         heap_info.used -= head->size;
         
-        // merge contiguous free sections
+        // Merge contiguous free sections
         heap_header_t *app = head->next;
         while((app != NULL) && (app->is_free == 1)) {
             head->size += app->size + sizeof(heap_header_t);
@@ -79,7 +75,6 @@ void *first_free(size_t len) {
             head2->next = NULL;
             head->next = head2;
             head->size = len;
-            //print_header(head);
             heap_info.used += len + sizeof(heap_header_t);
             return (void *) head + sizeof(heap_header_t);
         }

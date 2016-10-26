@@ -102,7 +102,7 @@ int vmm_map(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
     }
     
     // If the page table is not present, create it
-    if(pdir[virt >> 22] == 0) {
+    if(!pdir[virt >> 22]) {
         if(!vmm_create_page_table(pdir, virt, flags)) {
             return NULL;
         }
@@ -156,6 +156,17 @@ page_dir_t *create_address_space() {
 }
 
 /**
+ * Deletes a page directory
+ */
+void delete_address_space(page_dir_t *pdir) {
+    for(int i = 0; i < PAGEDIR_SIZE; i++) {
+        if(pdir[i * PAGE_SIZE >> 22]) {
+            vmm_unmap_page_table(pdir, i * PAGE_SIZE);
+        }
+    }
+}
+
+/**
  * Unmaps the page table and frees the memory block
  */
 void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
@@ -170,8 +181,13 @@ void vmm_unmap_page_table(page_dir_t *pdir, vmm_addr_t virt) {
  */
 void vmm_unmap(page_dir_t *pdir, vmm_addr_t virt) {
     if(pdir[virt >> 22] != NULL) {
-        pmm_free(get_phys_addr(pdir, virt));
-        ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = 0;
+        void *addr = get_phys_addr(pdir, virt);
+        if(addr) {
+            pmm_free(addr);
+            ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = 0;
+        } else {
+            printk("Error unmapping memory\n");
+        }
     }
 }
 

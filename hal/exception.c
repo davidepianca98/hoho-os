@@ -93,10 +93,13 @@ void ex_gpf(struct regs_error *re) {
     printk("cr2: %x cr3: %x\n", get_cr2(), get_pdbr());
     
     // If a GPF occurs in kernel mode, we don't really want to continue
-    if(re->es == 0x10)
+    if(re->es == 0x10) {
         panic();
-    else                    // if we were in user mode, just kill that thread or process
+    } else {
+        // If we were in user mode, just kill that thread or process
+        change_page_directory(get_kern_directory());
         stop_thread(1);
+    }
 }
 
 void ex_page_fault() {

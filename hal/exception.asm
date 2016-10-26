@@ -23,6 +23,11 @@ gpf_handle:
     push fs
     push es
     push ds
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
     push esp
     call ex_gpf
     ret
@@ -45,6 +50,11 @@ extern ex_page_fault
 
 global pf_handle
 pf_handle:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
     call ex_page_fault
     pop eax
     iretd
