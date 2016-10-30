@@ -8,7 +8,8 @@ int main() {
         printf("Siamo nel figlio\n");
         exit(0);
     } else {
-        printf("BOH: %x\n", pid);
+        printf("Siamo nel padre: %x\n", pid);
+        while(1);
     }
     return 0;
 }

@@ -56,10 +56,20 @@ void ex_bounds_check() {
     panic();
 }
 
-void ex_invalid_opcode(struct regs_error *re) {
-    printk("Invalid opcode\nFaulty instruction: 0x%x\n", re->eip);
-    printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
-    panic();
+void ex_invalid_opcode(struct regs *re) {
+    if(re->eip == 7) { // TODO probably needs a fix
+        change_page_directory(get_kern_directory());
+        stop_thread(0);
+    } else if(re->es == 0x10) {
+        // If an Invalid Opcode occurs in kernel mode, we don't really want to continue
+        printk("Invalid opcode\n");
+        printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
+        panic();
+    } else {
+        // If we were in user mode, just kill that thread or process
+        printk("Invalid opcode\n");
+        return_exception();
+    }
 }
 
 void ex_device_not_available() {
@@ -97,8 +107,7 @@ void ex_gpf(struct regs_error *re) {
         panic();
     } else {
         // If we were in user mode, just kill that thread or process
-        change_page_directory(get_kern_directory());
-        stop_thread(1);
+        return_exception();
     }
 }
 
@@ -109,9 +118,8 @@ void ex_page_fault() {
     printk("Page fault %x\n", virt_addr);
     // If the physical address is not mapped
     if(!(phys_addr)) {
-        if(!vmm_map(get_page_directory(), virt_addr, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
-            printk("Couldn't create page table\n");
-            panic();
+        if((virt_addr < 0) || !vmm_map(get_page_directory(), virt_addr, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
+            return_exception();
         }
     } else {
         printk("\nPage fault at addr: 0x%x\n", virt_addr);
@@ -140,3 +148,7 @@ void ex_simd_fpu() {
     panic();
 }
 
+void return_exception() {
+    change_page_directory(get_kern_directory());
+    stop_thread(1);
+}

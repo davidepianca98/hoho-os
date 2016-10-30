@@ -146,24 +146,27 @@ int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
  */
 int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uint32_t *argv1) {
     *argc = 1;
-    char *argv = (char *) umalloc(strlen(name) + strlen(arguments) + 1, (vmm_addr_t *) thread->heap);
+    char *argv = (char *) umalloc(strlen(name) + strlen(arguments) + 10, (vmm_addr_t *) thread->heap);
     strcpy(argv, name);
     
+    char *argv_c = argv;
     // TODO fix arguments
     while(*arguments) {
         char *p = strchr(arguments, ' ');
         if(p == NULL) {
-            strcpy(argv[*argc], arguments);
+            strcpy(argv_c, arguments);
             (*argc)++;
             break;
         }
         int strl = strlen(arguments) - strlen(p);
-        strncpy(argv[*argc], arguments, strl);
+        strncpy(argv_c, arguments, strl);
         (*argc)++;
         while(strl > 0) {
             arguments++;
+            argv_c++;
             strl--;
         }
+        strcat(argv_c, "\n");
         arguments++;
     }
     *argv1 = (uint32_t) argv;
@@ -178,6 +181,8 @@ int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uin
 int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
     // Fill kernel stack
     uint32_t *stackp = (uint32_t *) thread->stack_kernel_limit;
+    *--stackp = 0x23;                                       // ss
+    *--stackp = thread->stack_limit;                        // esp
     *--stackp = 0x202;                                      // eflags
     *--stackp = 0x1B;                                       // cs
     *--stackp = thread->eip;                                // eip
@@ -196,9 +201,9 @@ int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
     
     // Fill user stack
     stackp = (uint32_t *) thread->stack_limit;
+    *--stackp = (uint32_t) &end_process;                    // The process needs to know where to return
     *--stackp = argv;
     *--stackp = argc;
-    *--stackp = (uint32_t) &end_process;                    // The process needs to know where to return
     thread->esp = (uint32_t) stackp;
     vmm_unmap_phys(get_kern_directory(), (uint32_t) thread->esp);
     
@@ -233,14 +238,12 @@ void end_proc(int ret) {
         vmm_unmap(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
         vmm_unmap(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
         vmm_unmap(cur->pdir, cur->thread_list->heap);
-        delete_address_space(cur->pdir);
         
         thread_t *thread = cur->thread_list;
         cur->thread_list = cur->thread_list->next;
         kfree(thread);
     }
-
-    // TODO Delete the page directory and page tables
+    delete_address_space(cur->pdir);
 
     sched_state(1);
     enable_int();

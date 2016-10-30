@@ -50,11 +50,7 @@ int syscall_disp() {
                   push %%ecx; \
                   push %%ebx; \
                   call *%0;   \
-                  pop %%ebx;  \
-                  pop %%ebx;  \
-                  pop %%ebx;  \
-                  pop %%ebx;  \
-                  pop %%ebx;  \
+                  add $20, %%esp; \
                   sti" : : "r" (func));
     asm volatile("mov %%eax, %0" : "=r" (ret));
     return ret;

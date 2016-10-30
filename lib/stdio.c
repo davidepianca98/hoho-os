@@ -27,10 +27,10 @@ void printf(char *buffer, ...) {
     vsprintf(str, buffer, args);
     va_end(args);
     
-    // call printk
+    // Call printk
     asm volatile("lea (%0), %%ebx" : : "b" (str));
 	asm volatile("xor %eax, %eax; \
-	              int $0x72");
+                  int $0x72");
 }
 
 void scanf(char *format, ...) {

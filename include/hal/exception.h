@@ -32,7 +32,7 @@ void ex_nmi();                                              // 2
 void ex_breakpoint();                                       // 3
 void ex_overflow();                                         // 4
 void ex_bounds_check();                                     // 5
-void ex_invalid_opcode(struct regs_error *re);              // 6
+void ex_invalid_opcode(struct regs *re);                    // 6
 void ex_device_not_available();                             // 7
 void ex_double_fault();                                     // 8
 // 9 reserved
@@ -47,6 +47,8 @@ void ex_alignment_check();                                  // 17
 void ex_machine_check();                                    // 18
 void ex_simd_fpu();                                         // 19
 // 20 - 31 reserved
+
+void return_exception();
 
 #endif
 

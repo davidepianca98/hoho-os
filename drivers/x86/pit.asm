@@ -72,3 +72,7 @@ pit_int:
     pop eax
     iretd
 
+global fork_eip
+fork_eip:
+    pop eax
+    jmp eax

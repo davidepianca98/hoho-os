@@ -59,7 +59,13 @@ void map_kernel(page_dir_t *pdir) {
     
     // Identity map first 4MB
     for(int i = 0; i < 1024; i++, virt += PAGE_SIZE, phys += PAGE_SIZE) {
-        vmm_map_phys(pdir, virt, phys, PAGE_PRESENT | PAGE_RW);
+        if(pdir[virt >> 22] == 0) {
+            if(!vmm_create_page_table(pdir, virt, PAGE_PRESENT | PAGE_RW)) {
+                printk("Error creating page table");
+                return;
+            }
+        }
+        ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | PAGE_PRESENT | PAGE_RW;
     }
 }
 
@@ -151,7 +157,16 @@ page_dir_t *create_address_space() {
     if(!pdir)
         return NULL;
     // Clone page directory
-    memcpy(pdir, kern_dir, PAGEDIR_SIZE);
+    int i;
+    vmm_addr_t addr = 0;
+    for(i = 0; i < PAGEDIR_SIZE; i++, addr += 0x400000) {
+        if(kern_dir[i] & PAGE_PRESENT) {
+            if(!vmm_create_page_table(pdir, addr, kern_dir[i] << 20 >> 20)) {
+                return NULL;
+            }
+            memcpy((void *) (pdir[i] >> 12 << 12), (void *) (kern_dir[i] >> 12 << 12), PAGE_SIZE);
+        }
+    }
     return pdir;
 }
 

@@ -41,7 +41,11 @@ invop_handle:
     push fs
     push es
     push ds
-    push eax
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
     push esp
     call ex_invalid_opcode
     ret

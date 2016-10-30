@@ -30,7 +30,7 @@ void gdt_init() {
     gdt_set_entry(4, 0, 0xFFFFFFFF, 0xF2);
     
     ptr.base = (uint32_t) &gdt_tab;
-    ptr.limit = sizeof(struct gdt_info) * GDT_LEN - 1;
+    ptr.limit = (sizeof(struct gdt_info) * GDT_LEN) - 1;
     
     gdt_set(&ptr);
 }

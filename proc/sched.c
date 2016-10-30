@@ -54,20 +54,20 @@ uint32_t schedule(uint32_t esp) {
         panic();
     }
     
-    // check if the time slice ended
+    // Check if the time slice ended
     if(get_tick_count() <= list->thread_list->time)
         return esp;
     
     reset_tick_count();
     
-    // save the stack pointer
+    // Save the stack pointer
     list->thread_list->esp_kernel = esp;
     
-    // change thread for the next run
+    // Change thread for the next run
     list->thread_list = list->thread_list->next;
     
     do {
-        // change process, make sure it's not a finished one
+        // Change process, make sure it's not a finished one
         list = list->next;
     } while(list->state == PROC_STOPPED);
     set_esp0(list->thread_list->stack_kernel_limit);

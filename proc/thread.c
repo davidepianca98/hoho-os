@@ -22,6 +22,8 @@
 #include <hal/hal.h>
 #include <lib/string.h>
 
+extern void fork_eip();
+
 static int pid = 2;
 
 /* Allocates space for a new thread */
@@ -43,18 +45,26 @@ int start_thread() {
     sched_state(0);
     disable_int();
     process_t *cur = get_cur_proc();
-    if(cur->thread_list->pid == 1)
-        return -1;
     
     thread_t *thread = create_thread();
-    if(thread == NULL)
+    if(!thread)
         return -1;
+    
+    thread_t *parent = cur->thread_list;
     
     thread->image_base = cur->thread_list->image_base;
     thread->image_size = cur->thread_list->image_size;
     thread->parent = (void *) cur;
     
-    if(!build_stack(thread, cur->pdir, cur->threads)) {
+    if(!build_stack(thread, cur->pdir, cur->threads + 1)) {
+        kfree(thread);
+        sched_state(1);
+        enable_int();
+        return -1;
+    }
+    
+    if(!stack_fill(thread, 0, 0)) {
+        kfree(thread);
         sched_state(1);
         enable_int();
         return -1;
@@ -62,31 +72,13 @@ int start_thread() {
     
     memcpy((void *) thread->stack_limit - PAGE_SIZE, (void *) cur->thread_list->stack_limit - PAGE_SIZE, PAGE_SIZE);
 
-    memcpy((void *) thread->stack_kernel_limit - PAGE_SIZE, (void *) cur->thread_list->stack_kernel_limit - PAGE_SIZE, PAGE_SIZE);
-
-    if(!build_heap(thread, cur->pdir, cur->threads)) {
+    if(!build_heap(thread, cur->pdir, cur->threads + 1)) {
+        kfree(thread);
         sched_state(1);
         enable_int();
         return -1;
     }
     memcpy((void *) thread->heap, (void *) cur->thread_list->heap, PAGE_SIZE);
-    
-    // edit the stack
-    uint32_t *stackp = (uint32_t *) thread->stack_kernel_limit;
-    while(*stackp != 0x1B) {
-        if((uint32_t) stackp < (thread->stack_kernel_limit - PAGE_SIZE))
-            return -1;
-        stackp--;
-    }
-    // TODO maybe we need to change the esp
-    for(int i = 0; i < 7; i++)
-        stackp--;
-    
-    // ebp
-    *--stackp = thread->esp + PAGE_SIZE;
-    for(int i = 0; i < 4; i++)
-        stackp--;
-    thread->esp_kernel = (uint32_t) stackp;
     
     cur->threads++;
     
@@ -95,10 +87,16 @@ int start_thread() {
     cur->thread_list->next->prec = thread;
     cur->thread_list->next = thread;
     
-    thread->state = PROC_ACTIVE;
-    sched_state(1);
-    enable_int();
-    return 1;
+    // TODO fix splitting
+    fork_eip();
+    if(cur->thread_list == parent) {
+        thread->state = PROC_ACTIVE;
+        sched_state(1);
+        enable_int();
+        return thread->pid;
+    } else {
+        return 0;
+    }
 }
 
 /* Terminates the calling thread */
