@@ -58,21 +58,17 @@ int strncmp(char *str1, char *str2, size_t len) {
 }
 
 void memset(void *start, uint32_t val, size_t len) {
-    uint8_t *p = start;
-    while(len--) {
-        *p++ = (uint8_t) val;
-    }
+    asm volatile("rep stosb"
+	             : "=c"((int){0})
+	             : "D"(start), "a"(val), "c"(len)
+	             : "flags", "memory");
 }
 
 void memcpy(void *dest, void *src, int size) {
-    int i = 0;
-    char *dest8 = (char *) dest;
-    char *src8 = (char *) src;
-    for(i = 0; i < size; i++) {
-        if(&dest8[i] == src8)
-            return;
-        dest8[i] = src8[i];
-    }
+    asm volatile("rep movsb"
+	            : "=c"((int){0})
+	            : "D"(dest), "S"(src), "c"(size)
+	            : "flags", "memory");
 }
 
 void itoa(int val, char *str, int base) {

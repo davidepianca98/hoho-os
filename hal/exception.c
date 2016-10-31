@@ -20,6 +20,8 @@
 #include <proc/proc.h>
 #include <proc/thread.h>
 
+void (*return_error)() = (void *) RETURN_ADDR;
+
 void default_ir_handler() {
     disable_int();
     printk("Unhandled exception\n");
@@ -57,10 +59,7 @@ void ex_bounds_check() {
 }
 
 void ex_invalid_opcode(struct regs *re) {
-    if(re->eip == 7) { // TODO probably needs a fix
-        change_page_directory(get_kern_directory());
-        stop_thread(0);
-    } else if(re->es == 0x10) {
+    if(re->es == 0x10) {
         // If an Invalid Opcode occurs in kernel mode, we don't really want to continue
         printk("Invalid opcode\n");
         printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
@@ -149,6 +148,7 @@ void ex_simd_fpu() {
 }
 
 void return_exception() {
-    change_page_directory(get_kern_directory());
-    stop_thread(1);
+    int error = 1;
+    asm volatile("mov %0, %%eax" : : "r" (error));
+    (*return_error)();
 }

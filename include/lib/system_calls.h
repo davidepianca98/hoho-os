@@ -19,6 +19,7 @@
 
 void system(char *arg);
 char *pwd();
+void end_process_return();
 
 #endif
 

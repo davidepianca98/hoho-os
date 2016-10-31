@@ -25,8 +25,14 @@ void system(char *arg) {
 
 char *pwd() {
     char *ret;
-    asm volatile("mov $6, %eax; \
+    asm volatile("mov $7, %eax; \
 	                  int $0x72");
     asm volatile("mov %%eax, %0" : "=r" (ret));
     return ret;
+}
+
+void end_process_return() {
+    asm volatile("mov %eax, %ebx; \
+                  mov $5, %eax; \
+                  int $0x72");
 }

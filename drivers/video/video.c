@@ -38,7 +38,7 @@ void video_init(int h, int w) {
 
 void printk(char *buffer, ...) {
     int i = 0;
-    char str[1024];
+    char str[256];
     
     va_list args;
     

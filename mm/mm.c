@@ -47,7 +47,7 @@ void pmm_init(uint32_t mem_size, mm_addr_t *mmap_addr, uint32_t mmap_len) {
         // Increment the pointer to the next map entry
         mm_reg = (mem_region_t *) ((uint32_t) mm_reg + mm_reg->size + sizeof(mm_reg->size));
     }
-    pmm_deinit_reg(0x0, 0x400000);
+    pmm_deinit_reg(0x0, KERNEL_SPACE_END);
     pmm.size = (pmm.max_blocks - pmm.used_blocks) * 4;
 }
 
@@ -132,7 +132,7 @@ void *pmm_malloc() {
  * Frees a block
  */
 void pmm_free(mm_addr_t *addr) {
-    if((uint32_t) addr < 0x400000)
+    if((uint32_t) addr < KERNEL_SPACE_END)
         return;
     pmm_unset_bit((uint32_t) addr / BLOCKS_LEN);
     pmm.used_blocks--;
@@ -169,7 +169,8 @@ void enable_paging() {
  * Loads the pdbr register with a physical address to a page directory
  */
 void load_pdbr(mm_addr_t addr) {
-    asm volatile("mov %%eax, %%cr3" : : "a" (addr));
+    asm volatile("mov %0, %%cr3" : : "r" (addr));
+    enable_paging();
 }
 
 /**
@@ -177,7 +178,7 @@ void load_pdbr(mm_addr_t addr) {
  */
 mm_addr_t get_pdbr() {
     mm_addr_t ret;
-    asm volatile("mov %%cr3, %%eax" : "=a" (ret));
+    asm volatile("mov %%cr3, %0" : "=r" (ret));
     return ret;
 }
 
@@ -202,6 +203,6 @@ int get_cr0() {
  */
 int get_cr2() {
     int ret;
-    asm volatile("mov %%cr2, %%eax" : "=a" (ret));
+    asm volatile("mov %%cr2, %0" : "=r" (ret));
     return ret;
 }

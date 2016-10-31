@@ -21,6 +21,7 @@
 #include <lib/string.h>
 #include <drivers/io.h>
 #include <panic.h>
+#include <lib/system_calls.h>
 
 process_t *list;
 static int n_proc = 1;
@@ -98,6 +99,8 @@ void sched_remove_proc(int id) {
 }
 
 void sched_init() {
+    memcpy((void *) RETURN_ADDR, &end_process_return, PAGE_SIZE);
+    
     process_t *proc = (process_t *) kmalloc(sizeof(process_t));
     strcpy(proc->name, "console");
     thread_t *main_thread = (thread_t *) kmalloc(sizeof(thread_t));
@@ -112,9 +115,9 @@ void sched_init() {
     proc->pdir = get_kern_directory();
     main_thread->eip = (uint32_t) &main_proc;
     
-    vmm_map(proc->pdir, (vmm_addr_t) 0x400000, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    vmm_map(proc->pdir, (vmm_addr_t) KERNEL_SPACE_END, PAGE_PRESENT | PAGE_RW | PAGE_USER);
 
-    main_thread->esp = (uint32_t) get_phys_addr(proc->pdir, 0x400000);
+    main_thread->esp = (uint32_t) get_phys_addr(proc->pdir, KERNEL_SPACE_END);
     main_thread->stack_limit = ((uint32_t) main_thread->esp + PAGE_SIZE);
     
     main_thread->esp_kernel = main_thread->stack_limit;

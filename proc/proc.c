@@ -179,10 +179,17 @@ int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uin
  * Fills the stack with register values
  */
 int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
+    // Fill user stack
+    uint32_t *stackp = (uint32_t *) thread->stack_limit;
+    *--stackp = argv;
+    *--stackp = argc;
+    *--stackp = (uint32_t) RETURN_ADDR;     // The process needs to know where to return
+    thread->esp = (uint32_t) stackp;
+    
     // Fill kernel stack
-    uint32_t *stackp = (uint32_t *) thread->stack_kernel_limit;
+    stackp = (uint32_t *) thread->stack_kernel_limit;
     *--stackp = 0x23;                                       // ss
-    *--stackp = thread->stack_limit;                        // esp
+    *--stackp = thread->esp;                                // esp
     *--stackp = 0x202;                                      // eflags
     *--stackp = 0x1B;                                       // cs
     *--stackp = thread->eip;                                // eip
@@ -199,12 +206,6 @@ int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv) {
     *--stackp = 0x23;                                       // gs
     thread->esp_kernel = (uint32_t) stackp;
     
-    // Fill user stack
-    stackp = (uint32_t *) thread->stack_limit;
-    *--stackp = (uint32_t) &end_process;                    // The process needs to know where to return
-    *--stackp = argv;
-    *--stackp = argc;
-    thread->esp = (uint32_t) stackp;
     vmm_unmap_phys(get_kern_directory(), (uint32_t) thread->esp);
     
     return 1;
@@ -221,14 +222,14 @@ void end_proc(int ret) {
         printk("Process not found\n");
         sched_state(1);
         enable_int();
-        return;
+        while(1);
     }
     
     if(ret)
         printk("Process %d returned with error: %d\n", cur->thread_list->pid, ret);
     
     cur->state = PROC_STOPPED;
-    
+
     // Remove the executable
     for(uint32_t page = 0; page < cur->thread_list->image_size / PAGE_SIZE; page++) {
         vmm_unmap(cur->pdir, cur->thread_list->image_base + (page * PAGE_SIZE));
@@ -243,7 +244,10 @@ void end_proc(int ret) {
         cur->thread_list = cur->thread_list->next;
         kfree(thread);
     }
+    
+    change_page_directory(get_kern_directory());
     delete_address_space(cur->pdir);
+    kfree(cur);
 
     sched_state(1);
     enable_int();

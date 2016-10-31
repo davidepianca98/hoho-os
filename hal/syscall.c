@@ -21,16 +21,17 @@
 #include <proc/thread.h>
 #include <drivers/keyboard.h>
 
-#define MAX_SYSCALL 7
+#define MAX_SYSCALL 8
 
 static void *syscalls[] = {
-    &printk,        // printf
-    &gets,          // scanf
-    &clear,         // clear
-    &start_thread,  
-    &stop_thread,  
-    &vfs_file_open, // fopen
-    &console_pwd    // PWD
+    &printk,            // printf
+    &gets,              // scanf
+    &clear,             // clear
+    &start_thread,
+    &stop_thread,
+    &end_process,       // return n
+    &vfs_file_open,     // fopen
+    &console_pwd        // PWD
 };
 
 void syscall_init() {
@@ -38,11 +39,11 @@ void syscall_init() {
 }
 
 int syscall_disp() {
-    int index = 0, ret = -1;
+    int index, ret = -1;
     asm volatile("mov %%eax, %0" : "=r" (index));
     
     if(index >= MAX_SYSCALL)
-        return 0;
+        return ret;
     void *func = syscalls[index];
     asm volatile("push %%edi; \
                   push %%esi; \

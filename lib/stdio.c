@@ -20,7 +20,7 @@
 #include <lib/system_calls.h>
 
 void printf(char *buffer, ...) {
-    char str[1024];
+    char str[256];
     va_list args;
     
     va_start(args, buffer);
@@ -37,7 +37,7 @@ void scanf(char *format, ...) {
     va_list args;
     int *d;
     char *c;
-    char str[1024];
+    char str[256];
     
     va_start(args, format);
     for(int i = 0; i < strlen(format); i++) {
@@ -83,7 +83,7 @@ FILE *fopen(char *filename, char *mode) {
     
     asm volatile("lea (%0), %%ebx" : : "b" (file));
     asm volatile("lea (%0), %%ecx" : : "c" (mode));
-    asm volatile("mov $5, %eax; \
+    asm volatile("mov $6, %eax; \
                    int $0x72");
     
     asm volatile("mov %%eax, %0" : "=r" (f));

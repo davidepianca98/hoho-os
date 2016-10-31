@@ -107,7 +107,8 @@ void stop_thread(int code) {
     if(cur == NULL) {
         printk("Process not found\n");
         sched_state(1);
-        return;
+        enable_int();
+        while(1);
     }
     
     // Terminating the main thread will terminate the process

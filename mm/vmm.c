@@ -67,6 +67,12 @@ void map_kernel(page_dir_t *pdir) {
         }
         ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | PAGE_PRESENT | PAGE_RW;
     }
+    // Space for RETURN_ADDR
+    if(!vmm_create_page_table(pdir, virt, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
+        printk("Error creating page table");
+        return;
+    }
+    ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | PAGE_PRESENT | PAGE_RW | PAGE_USER;
 }
 
 /**
@@ -159,7 +165,7 @@ page_dir_t *create_address_space() {
     // Clone page directory
     int i;
     vmm_addr_t addr = 0;
-    for(i = 0; i < PAGEDIR_SIZE; i++, addr += 0x400000) {
+    for(i = 0; i < PAGEDIR_SIZE; i++, addr += KERNEL_SPACE_END) {
         if(kern_dir[i] & PAGE_PRESENT) {
             if(!vmm_create_page_table(pdir, addr, kern_dir[i] << 20 >> 20)) {
                 return NULL;

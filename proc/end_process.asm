@@ -16,10 +16,10 @@
 
 extern end_proc
 
-; saves the program's main return value, then calls the real end process function
+; Saves the program's main return value, then calls the real end process function
 global end_process
 end_process:
-    push eax
+    push ebx
     call end_proc
-    ret    ; we won't ever reach this point
+    ret    ; We won't ever reach this point
 
