@@ -17,4 +17,3 @@ int main() {
     printf("La stringa e': %s\n", s);
     return 0;
 }
-

@@ -125,6 +125,7 @@ void gets(char *str) {
     char c;
     
     asm volatile("sti");
+    sched_state(0);
     while(1) {
         c = keyboard_get_lastkey();
         if(c == NULL)
@@ -141,5 +142,6 @@ void gets(char *str) {
             break;
         }
     }
+    sched_state(1);
 }
 

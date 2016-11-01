@@ -20,20 +20,13 @@
 static int x;
 static int y;
 struct video_mem vram;
-int mm[25][80]; //TODO dynamically allocate
 
 void video_init(int h, int w) {
-    int i, j, count = 0;
-    
     x = 0;
     y = 0;
     vram.heigth = h;
     vram.width = w;
     vram.ram = (uint16_t *) 0xB8000;
-    for(i = 0; i < h; i++)
-        for(j = 0; j < w; j++)
-            mm[i][j] = count++;
-    vram.ram_mat = (int **) &mm;
 }
 
 void printk(char *buffer, ...) {
@@ -53,7 +46,7 @@ void printk(char *buffer, ...) {
             case '\0':
                 return;
             case '\b':
-                vram.ram[mm[y][--x]] = (uint16_t) 3872;
+                vram.ram[(y * vram.width) + --x] = (uint16_t) 3872;
                 i++;
                 break;
             case '\n':
@@ -67,7 +60,7 @@ void printk(char *buffer, ...) {
                 x = 0;
                 break;
             default:
-                vram.ram[mm[y][x++]] = (uint16_t) (3840 | str[i++]);
+                vram.ram[(y * vram.width) + x++] = (uint16_t) (3840 | str[i++]);
                 break;
         }
     }
@@ -85,21 +78,16 @@ void check() {
 }
 
 void scroll() {
-    int i;
-    for(i = 0; i < vram.width * (vram.heigth - 1); i++) {
+    for(int i = 0; i < vram.width * (vram.heigth - 1); i++) {
         vram.ram[i] = vram.ram[i + vram.width];
     }
-    for(i = 0; i < vram.width; i++) {
+    for(int i = 0; i < vram.width; i++) {
         vram.ram[vram.width * (vram.heigth - 1) + i] = 3872;
     }
 }
 
 void clear() {
-    int i;
-    
-    x = 0;
-    y = 0;
-    for(i = 0; i < vram.heigth * vram.width; i++) {
+    for(int i = 0; i < vram.heigth * vram.width; i++) {
         *(vram.ram + i) = (uint16_t) 3872;
     }
 }

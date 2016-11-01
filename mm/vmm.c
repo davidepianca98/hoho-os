@@ -47,7 +47,7 @@ void vmm_init() {
     memset((void *) get_page_table_bitmap(), 0, 0x10);
     map_kernel(kern_dir);
     change_page_directory(kern_dir);
-    //enable_paging();
+    enable_paging();
 }
 
 /**

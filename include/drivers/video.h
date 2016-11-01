@@ -13,7 +13,6 @@ struct video_mem {
     int heigth;
     int width;
     uint16_t *ram;
-    int **ram_mat;
 };
 
 typedef struct vbe_info_block {
