@@ -23,7 +23,7 @@
 
 #define MAX_SYSCALL 8
 
-typedef uint32_t (*syscall_call)(uint32_t, ...);
+typedef uint32_t (*syscall_call_func)(uint32_t, ...);
 
 static void *syscalls[] = {
     &printk,            // printf
@@ -43,7 +43,6 @@ void syscall_init() {
 uint32_t syscall_disp(struct regs *re) {
     if(re->eax >= MAX_SYSCALL)
         return -1;
-    syscall_call func = syscalls[re->eax];
+    syscall_call_func func = syscalls[re->eax];
     return func(re->ebx, re->ecx, re->edx, re->esi, re->edi);
 }
-

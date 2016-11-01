@@ -17,23 +17,19 @@
 #include <hal/hal.h>
 #include <lib/string.h>
 #include <lib/unistd.h>
+#include <lib/system_calls.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
 
 /* Creates a child thread */
 pid_t fork() {
-    int ret = 0xB0B0;
-    asm volatile("mov $3, %eax; \
-                  int $0x72");
-    asm volatile("mov %%eax, %0" : "=r" (ret));
-    return ret;
+    return (pid_t) syscall_call(3);
 }
 
 /* Terminates a thread */
 void exit(int code) {
     asm volatile("mov %0, %%ebx" : : "b" (code));
-    asm volatile("mov $4, %eax; \
-                  int $0x72");
+    syscall_call(4);
 }
 
 /* Waits until a thread ends */

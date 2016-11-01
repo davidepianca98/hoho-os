@@ -15,24 +15,27 @@
  */
  
 #include <lib/string.h>
+#include <lib/system_calls.h>
 
 void system(char *arg) {
     if(strcmp(arg, "clear") == 0) {
-        asm volatile("mov $2, %eax; \
-	                  int $0x72");
+        syscall_call(2);
     }
 }
 
 char *pwd() {
-    char *ret;
-    asm volatile("mov $7, %eax; \
-	                  int $0x72");
-    asm volatile("mov %%eax, %0" : "=r" (ret));
-    return ret;
+    return (char *) syscall_call(7);
 }
 
 void end_process_return() {
-    asm volatile("mov %eax, %ebx; \
-                  mov $5, %eax; \
-                  int $0x72");
+    asm volatile("mov %eax, %ebx");
+    syscall_call(5);
+}
+
+void *syscall_call(int n) {
+    void *ret;
+    asm volatile("mov %0, %%eax; \
+	              int $0x72" : : "a" (n));
+    asm volatile("mov %%eax, %0" : "=r" (ret));
+    return ret;
 }

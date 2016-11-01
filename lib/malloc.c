@@ -28,4 +28,3 @@ void *malloc(size_t len) {
 void free(void *ptr) {
     ptr = ptr;
 }
-

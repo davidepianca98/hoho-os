@@ -29,7 +29,7 @@ void printf(char *buffer, ...) {
     
     // Call printk
     asm volatile("lea (%0), %%ebx" : : "b" (str));
-	asm volatile("xor %eax, %eax; \
+    asm volatile("xor %eax, %eax; \
                   int $0x72");
 }
 
@@ -48,23 +48,20 @@ void scanf(char *format, ...) {
                     case 'c':
                         c = va_arg(args, char *);
                         asm volatile("lea (%0), %%ebx" : : "b" (str));
-                        asm volatile("mov $1, %eax; \
-	                                  int $0x72");
+                        syscall_call(1);
 	                    *c = (char) str[0];
                         break;
                     case 'd':
                     case 'i':
                         d = va_arg(args, int *);
                         asm volatile("lea (%0), %%ebx" : : "b" (str));
-                        asm volatile("mov $1, %eax; \
-	                                  int $0x72");
+                        syscall_call(1);
 	                    *d = atoi(str);
                         break;
                     case 's':
                         c = va_arg(args, char *);
                         asm volatile("lea (%0), %%ebx" : : "b" (str));
-                        asm volatile("mov $1, %eax; \
-	                                  int $0x72");
+                        syscall_call(1);
                         strcpy(c, str);
                         break;
                 }
@@ -75,7 +72,6 @@ void scanf(char *format, ...) {
 }
 
 FILE *fopen(char *filename, char *mode) {
-    FILE *f;
     char file[256];
     strcpy(file, pwd());
     strcat(file, "/");
@@ -83,10 +79,6 @@ FILE *fopen(char *filename, char *mode) {
     
     asm volatile("lea (%0), %%ebx" : : "b" (file));
     asm volatile("lea (%0), %%ecx" : : "c" (mode));
-    asm volatile("mov $6, %eax; \
-                   int $0x72");
-    
-    asm volatile("mov %%eax, %0" : "=r" (f));
-    return f;
+    return (FILE *) syscall_call(6);
 }
 
