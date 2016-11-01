@@ -133,7 +133,7 @@ void gets(char *str) {
         keyboard_invalidate_lastkey();
         if(((int) c >= 32) && ((int) c <= 122))
             str[count++] = c;
-        else if(c == '\r')
+        else if(c == '\b')
             if(count > 0)
                 count--;
         printk("%c", c);
