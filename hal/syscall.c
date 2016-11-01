@@ -23,6 +23,8 @@
 
 #define MAX_SYSCALL 8
 
+typedef uint32_t (*syscall_call)(uint32_t, ...);
+
 static void *syscalls[] = {
     &printk,            // printf
     &gets,              // scanf
@@ -35,25 +37,13 @@ static void *syscalls[] = {
 };
 
 void syscall_init() {
-    install_ir(0x72, 0x80 | 0x0E | 0x60, 0x8, &syscall_disp);
+    install_ir(0x72, 0x80 | 0x0E | 0x60, 0x8, &syscall_handle);
 }
 
-int syscall_disp() {
-    int index, ret = -1;
-    asm volatile("mov %%eax, %0" : "=r" (index));
-    
-    if(index >= MAX_SYSCALL)
-        return ret;
-    void *func = syscalls[index];
-    asm volatile("push %%edi; \
-                  push %%esi; \
-                  push %%edx; \
-                  push %%ecx; \
-                  push %%ebx; \
-                  call *%0;   \
-                  add $20, %%esp; \
-                  sti" : : "r" (func));
-    asm volatile("mov %%eax, %0" : "=r" (ret));
-    return ret;
+uint32_t syscall_disp(struct regs *re) {
+    if(re->eax >= MAX_SYSCALL)
+        return -1;
+    syscall_call func = syscalls[re->eax];
+    return func(re->ebx, re->ecx, re->edx, re->esi, re->edi);
 }
 

@@ -59,14 +59,13 @@ void ex_bounds_check() {
 }
 
 void ex_invalid_opcode(struct regs *re) {
+    printk("Invalid opcode\n");
+        printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
     if(re->es == 0x10) {
         // If an Invalid Opcode occurs in kernel mode, we don't really want to continue
-        printk("Invalid opcode\n");
-        printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
         panic();
     } else {
         // If we were in user mode, just kill that thread or process
-        printk("Invalid opcode\n");
         return_exception();
     }
 }
@@ -110,20 +109,18 @@ void ex_gpf(struct regs_error *re) {
     }
 }
 
-void ex_page_fault() {
+void ex_page_fault(struct regs_error *re) {
     int virt_addr = get_cr2();
     mm_addr_t phys_addr = (mm_addr_t) get_phys_addr(get_page_directory(), virt_addr);
     
-    printk("Page fault %x\n", virt_addr);
-    // If the physical address is not mapped
-    if(!(phys_addr)) {
-        if((virt_addr < 0) || !vmm_map(get_page_directory(), virt_addr, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
-            return_exception();
-        }
-    } else {
-        printk("\nPage fault at addr: 0x%x\n", virt_addr);
-        printk("Phys addr: 0x%x\n", phys_addr);
+    printk("\nPage fault at addr: 0x%x\n", virt_addr);
+    printk("Phys addr: 0x%x\n", phys_addr);
+    // If a Page Fault occurs in kernel mode, we don't really want to continue
+    if(re->es == 0x10) {
         panic();
+    } else {
+        // If we were in user mode, just kill that thread or process
+        return_exception();
     }
 }
 

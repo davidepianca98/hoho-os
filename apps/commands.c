@@ -66,6 +66,7 @@ void console_start(char *dir, char *command) {
     int procn = start_proc(senddir, arguments);
     if(procn != PROC_STOPPED) {
         while(proc_state(procn) != PROC_STOPPED);
+        remove_proc(procn);
     }
 }
 

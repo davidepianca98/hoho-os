@@ -25,6 +25,7 @@ void default_ir_handler();
 extern void invop_handle();
 extern void gpf_handle();
 extern void pf_handle();
+extern void syscall_handle();
 
 void ex_divide_by_zero();                                   // 0
 void ex_single_step();                                      // 1
@@ -40,7 +41,7 @@ void ex_invalid_tss();                                      // 10
 void ex_segment_not_present();                              // 11
 void ex_stack_fault();                                      // 12
 void ex_gpf(struct regs_error *re);                         // 13
-void ex_page_fault();                                       // 14
+void ex_page_fault(struct regs_error *re);                  // 14
 // 15 reserved
 void ex_fpu_error();                                        // 16
 void ex_alignment_check();                                  // 17

@@ -7,7 +7,6 @@ TODO:
 - test fat32 and fat16
 - ntfs
 - text editor
-- remove zombie processes
 - better keyboard drivers
 - pci
 - unify exceptions

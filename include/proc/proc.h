@@ -83,6 +83,7 @@ int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uin
 int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv);
 int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads);
 void end_proc(int ret);
+void remove_proc(int pid);
 int proc_state(int id);
 
 #endif

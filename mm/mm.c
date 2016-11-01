@@ -170,7 +170,6 @@ void enable_paging() {
  */
 void load_pdbr(mm_addr_t addr) {
     asm volatile("mov %0, %%cr3" : : "r" (addr));
-    enable_paging();
 }
 
 /**

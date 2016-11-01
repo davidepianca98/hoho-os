@@ -229,13 +229,27 @@ void end_proc(int ret) {
         printk("Process %d returned with error: %d\n", cur->thread_list->pid, ret);
     
     cur->state = PROC_STOPPED;
+    
+    sched_state(1);
+    enable_int();
+    while(1);
+}
 
+/**
+ * Removes a terminated process
+ */
+void remove_proc(int pid) {
+    process_t *cur = get_proc_by_id(pid);
+    
     // Remove the executable
     for(uint32_t page = 0; page < cur->thread_list->image_size / PAGE_SIZE; page++) {
         vmm_unmap(cur->pdir, cur->thread_list->image_base + (page * PAGE_SIZE));
     }
     
     for(int i = 0; i < cur->threads; i++) {
+        if(cur->thread_list->main == 1) {
+            sched_remove_proc(cur->thread_list->pid);
+        }
         vmm_unmap(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
         vmm_unmap(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
         vmm_unmap(cur->pdir, cur->thread_list->heap);
@@ -248,10 +262,6 @@ void end_proc(int ret) {
     change_page_directory(get_kern_directory());
     delete_address_space(cur->pdir);
     kfree(cur);
-
-    sched_state(1);
-    enable_int();
-    while(1);
 }
 
 /**

@@ -93,7 +93,6 @@ void sched_remove_proc(int id) {
         app->prec->next = app->next;
         app->next->prec = app->prec;
         n_proc--;
-        kfree(app);
         list = app->next;
     }
 }
