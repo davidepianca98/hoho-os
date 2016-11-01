@@ -32,7 +32,6 @@ void video_init(int h, int w) {
 void printk(char *buffer, ...) {
     int i = 0;
     char str[256];
-    
     va_list args;
     
     va_start(args, buffer);
@@ -60,6 +59,7 @@ void printk(char *buffer, ...) {
                 x = 0;
                 break;
             default:
+                check();
                 vram.ram[(y * vram.width) + x++] = (uint16_t) (3840 | str[i++]);
                 break;
         }

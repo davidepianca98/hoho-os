@@ -65,20 +65,20 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     uint32_t file_size = load_elf_file(name);
     if(!file_size) {
         printk("Error loading file\n");
-        return -1;
+        return 0;
     }
     
     // Check the elf header
     elf_header_t *eh = (elf_header_t *) MEMORY_LOAD_ADDRESS;
     if(!elf_validate(eh)) {
         printk("Failed validating elf\n");
-        return -1;
+        return 0;
     }
     
     // Relocate executable parts
     if(!load_elf_relocate(thread, pdir, eh)) {
         printk("Error relocating\n");
-        return -1;
+        return 0;
     }
     
     // Unmap executable from kernel directory
@@ -97,7 +97,7 @@ int load_elf_file(char *name) {
     file f = vfs_file_open(name, "r");
     if((f.type == FS_NULL) || (f.type & FS_DIR)) {
         printk("Failed opening file\n");
-        return -1;
+        return 0;
     }
     
     // Load the executable in memory
@@ -145,7 +145,7 @@ int load_elf_relocate(thread_t *thread, page_dir_t *pdir, elf_header_t *eh) {
                 if(!vmm_map(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), PAGE_PRESENT | PAGE_RW) ||
                    !vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) get_phys_addr(get_kern_directory(), ph[i].p_vaddr), PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
                     printk("Error mapping memory");
-                    return -1;
+                    return 0;
                 }
             }
             // Copy the executable into the correct memory location
