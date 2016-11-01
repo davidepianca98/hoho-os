@@ -21,7 +21,7 @@
 #include <proc/thread.h>
 #include <drivers/keyboard.h>
 
-#define MAX_SYSCALL 8
+#define MAX_SYSCALL 10
 
 typedef uint32_t (*syscall_call_func)(uint32_t, ...);
 
@@ -33,16 +33,20 @@ static void *syscalls[] = {
     &stop_thread,
     &end_process,       // return n
     &vfs_file_open,     // fopen
-    &console_pwd        // PWD
+    &console_pwd,       // PWD
+    &umalloc_sys,       // malloc
+    &ufree_sys          // free
 };
 
 void syscall_init() {
     install_ir(0x72, 0x80 | 0x0E | 0x60, 0x8, &syscall_handle);
 }
 
-uint32_t syscall_disp(struct regs *re) {
-    if(re->eax >= MAX_SYSCALL)
-        return -1;
+void syscall_disp(struct regs *re) {
+    if(re->eax >= MAX_SYSCALL) {
+        re->eax = -1;
+        return;
+    }
     syscall_call_func func = syscalls[re->eax];
-    return func(re->ebx, re->ecx, re->edx, re->esi, re->edi);
+    re->eax = func(re->ebx, re->ecx, re->edx, re->esi, re->edi);
 }

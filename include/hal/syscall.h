@@ -20,7 +20,7 @@
 #include <drivers/video.h>
 
 void syscall_init();
-uint32_t syscall_disp();
+void syscall_disp();
 
 #endif
 

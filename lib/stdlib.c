@@ -16,15 +16,15 @@
 
 #include <mm/mm.h>
 #include <mm/paging.h>
-#include <types.h>
+#include <lib/system_calls.h>
+#include <lib/stdlib.h>
 
-//TODO
 void *malloc(size_t len) {
-    len = len;
-    return NULL;
+    asm volatile("mov %0, %%ebx" : : "b" (len));
+    return syscall_call(8);
 }
 
-//TODO
 void free(void *ptr) {
-    ptr = ptr;
+    asm volatile("lea (%0), %%ebx" : : "b" (ptr));
+    syscall_call(9);
 }

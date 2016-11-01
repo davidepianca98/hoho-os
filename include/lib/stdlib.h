@@ -14,11 +14,10 @@
  *  limitations under the License.
  */
 
-#ifndef MALLOC_H
-#define MALLOC_H
+#ifndef STDLIB_H
+#define STDLIB_H
 
-#include <types.h>
-#include <mm/heap.h>
+#include "../types.h"
 
 void *malloc(size_t len);
 void free(void *ptr);

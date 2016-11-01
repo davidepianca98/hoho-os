@@ -18,7 +18,8 @@
 #include <mm/heap.h>
 #include <mm/mm.h>
 #include <mm/paging.h>
-#include <drivers/video.h>
+#include <proc/sched.h>
+#include <proc/proc.h>
 
 /**
  * Init the user process heap memory
@@ -82,3 +83,17 @@ void *first_free_usr(size_t len, vmm_addr_t *heap) {
     return NULL;
 }
 
+void *umalloc_sys(size_t len) {
+    process_t *cur = get_cur_proc();
+    if(cur && cur->thread_list) {
+        return umalloc(len, (vmm_addr_t *) cur->thread_list->heap);
+    }
+    return NULL;
+}
+
+void ufree_sys(void *ptr) {
+    process_t *cur = get_cur_proc();
+    if(cur && cur->thread_list) {
+        ufree(ptr, (vmm_addr_t *) cur->thread_list->heap);
+    }
+}
