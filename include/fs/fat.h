@@ -90,8 +90,9 @@ typedef struct directory {
 #define NAME_LEN 11
 
 void fat_mount(device_t *dev);
-void to_dos_file_name(char *name, char *str, int len);
-void to_normal_file_name(char *name, char *str, int len);
+void to_dos_file_name(char *name, char *str);
+void to_normal_file_name(char *name, char *str);
+uint32_t get_phys_sector(file *f);
 file fat_directory(char *dir_name, int devid);
 int fat_touch(char *name);
 void fat_read(file *f, char *buf);

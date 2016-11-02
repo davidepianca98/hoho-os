@@ -73,14 +73,13 @@ void fat_mount(device_t *dev) {
     //printk("n secs:%d fat offs:%d fat size:%d fat en size:%d\nn root en:%d root offs:%d root size:%d first data: %d data secs: %d\n", dev->minfo.n_sectors, dev->minfo.fat_offset, dev->minfo.fat_size, dev->minfo.fat_entry_size, dev->minfo.n_root_entries, dev->minfo.root_offset, dev->minfo.root_size, dev->minfo.first_data_sector, dev->minfo.data_sectors);
 }
 
-void to_dos_file_name(char *name, char *str, int len) {
-    int i;
-    
-    if((len > NAME_LEN) || (!name) || (!str))
+void to_dos_file_name(char *name, char *str) {
+    if((!name) || (!str))
         return;
     
-    memset(str, ' ', len);
-    for(i = 0; i < strlen(name) && i < len; i++) {
+    memset(str, ' ', NAME_LEN);
+    int i;
+    for(i = 0; i < strlen(name) && i < NAME_LEN; i++) {
         if((name[i] == '.') || (i == 8))
             break;
         str[i] = toupper(name[i]);
@@ -96,14 +95,14 @@ void to_dos_file_name(char *name, char *str, int len) {
     str[NAME_LEN] = 0;
 }
 
-void to_normal_file_name(char *name, char *str, int len) {
-    int i, j = 0, flag = 1;
+void to_normal_file_name(char *name, char *str) {
+    int j = 0, flag = 1;
     
-    if((len > NAME_LEN) || (!name) || (!str))
+    if((!name) || (!str))
         return;
     
-    memset(str, ' ', len);
-    for(i = 0; i < strlen(name) && i < len; i++) {
+    memset(str, ' ', NAME_LEN);
+    for(int i = 0; i < strlen(name) && i < NAME_LEN; i++) {
         if(name[i] != ' ') {
             str[j] = tolower(name[i]);
             j++;
@@ -120,6 +119,10 @@ void print_dir(directory_t *dir) {
     printk("%s %s %d %d %d\n", dir->filename, dir->extension, dir->attrs, dir->first_cluster, dir->file_size);
 }
 
+uint32_t get_phys_sector(file *f) {
+    return 32 + f->current_cluster - 1;
+}
+
 int fat_touch(char *name) {
     file f = fat_search(name);
     if(f.type != FS_NULL) {
@@ -129,110 +132,87 @@ int fat_touch(char *name) {
 }
 
 void fat_read(file *f, char *buf) {
-    if(f) {
-        device_t *dev = get_dev_by_id(f->dev);
-        uint32_t phys_sector = 32 + (f->current_cluster - 1);
-        unsigned char *sector = (unsigned char *) dev->read(phys_sector);
-        memcpy(buf, sector, SECTOR_SIZE);
-        
-        if(dev->minfo.type == 0) {
-            uint32_t fat_offset = f->current_cluster + (f->current_cluster / 2);
-            uint32_t fat_sector = dev->minfo.fat_offset + (fat_offset / SECTOR_SIZE);
-            uint32_t entry_offset = fat_offset % SECTOR_SIZE;
-        
-            sector = (unsigned char *) dev->read(fat_sector);
-            memcpy(FAT, sector, SECTOR_SIZE);
-        
-            sector = (unsigned char *) dev->read(fat_sector + 1);
-            memcpy(FAT + SECTOR_SIZE, sector, SECTOR_SIZE);
-        
-            uint16_t next_cluster = *(uint16_t *) &FAT[entry_offset];
-            if(f->current_cluster & 0x0001)
-                next_cluster >>= 4;
-            else
-                next_cluster &= 0x0FFF;
-        
-            if((next_cluster >= 0xFF8) || (next_cluster == 0)) {
-                f->eof = 1;
-                return;
-            }
-            
-            f->current_cluster = next_cluster;
-        } else if(dev->minfo.type == 1) {
-            uint32_t fat_offset = f->current_cluster * 2;
-            uint32_t fat_sector = dev->minfo.fat_offset + (fat_offset / SECTOR_SIZE);
-            uint32_t entry_offset = fat_offset % SECTOR_SIZE;
-            
-            sector = (unsigned char *) dev->read(fat_sector);
-            memcpy(FAT, sector, SECTOR_SIZE);
-        
-            sector = (unsigned char *) dev->read(fat_sector + 1);
-            memcpy(FAT + SECTOR_SIZE, sector, SECTOR_SIZE);
-            
-            uint16_t next_cluster = *(uint16_t *) &FAT[entry_offset];
-            
-            if((next_cluster >= 0xFFF8) || (next_cluster == 0)) {
-                f->eof = 1;
-                return;
-            }
-            
-            f->current_cluster = next_cluster;
-        } else if(dev->minfo.type == 2) {
-            uint32_t fat_offset = f->current_cluster * 4;
-            uint32_t fat_sector = dev->minfo.fat_offset + (fat_offset / SECTOR_SIZE);
-            uint32_t entry_offset = fat_offset % SECTOR_SIZE;
-            
-            sector = (unsigned char *) dev->read(fat_sector);
-            memcpy(FAT, sector, SECTOR_SIZE);
-        
-            sector = (unsigned char *) dev->read(fat_sector + 1);
-            memcpy(FAT + SECTOR_SIZE, sector, SECTOR_SIZE);
-            
-            uint32_t next_cluster = *(uint32_t *) &FAT[entry_offset] & 0x0FFFFFFF;
-            
-            if((next_cluster >= 0x0FFFFFF8) || (next_cluster == 0)) {
-                f->eof = 1;
-                return;
-            }
-            
-            f->current_cluster = next_cluster;
+    if(!f)
+        return;
+    
+    device_t *dev = get_dev_by_id(f->dev);
+    unsigned char *sector = (unsigned char *) dev->read(get_phys_sector(f));
+    memcpy(buf, sector, SECTOR_SIZE);
+    
+    uint32_t fat_offset;
+    switch(dev->minfo.type) {
+        case FAT12:
+            fat_offset = f->current_cluster + (f->current_cluster / 2);
+            break;
+        case FAT16:
+            fat_offset = f->current_cluster * 2;
+            break;
+        case FAT32:
+            fat_offset = f->current_cluster * 4;
+            break;
+    }
+    uint32_t fat_sector = dev->minfo.fat_offset + (fat_offset / SECTOR_SIZE);
+    uint32_t entry_offset = fat_offset % SECTOR_SIZE;
+    sector = (unsigned char *) dev->read(fat_sector);
+    memcpy(FAT, sector, SECTOR_SIZE);
+    sector = (unsigned char *) dev->read(fat_sector + 1);
+    memcpy(FAT + SECTOR_SIZE, sector, SECTOR_SIZE);
+    
+    if(dev->minfo.type == FAT12) {
+        uint16_t next_cluster = *(uint16_t *) &FAT[entry_offset];
+        if(f->current_cluster & 0x0001)
+            next_cluster >>= 4;
+        else
+            next_cluster &= 0x0FFF;
+    
+        if((next_cluster >= 0xFF8) || (next_cluster == 0)) {
+            f->eof = 1;
+            return;
         }
+        f->current_cluster = next_cluster;
+    } else if(dev->minfo.type == FAT16) {
+        uint16_t next_cluster = *(uint16_t *) &FAT[entry_offset];
+        if((next_cluster >= 0xFFF8) || (next_cluster == 0)) {
+            f->eof = 1;
+            return;
+        }
+        f->current_cluster = next_cluster;
+    } else if(dev->minfo.type == FAT32) {
+        uint32_t next_cluster = *(uint32_t *) &FAT[entry_offset] & 0x0FFFFFFF;
+        if((next_cluster >= 0x0FFFFFF8) || (next_cluster == 0)) {
+            f->eof = 1;
+            return;
+        }
+        f->current_cluster = next_cluster;
     }
 }
 
 void fat_write(file *f, char *str) {
-    if(f) {
-        char *file_name = kmalloc(NAME_LEN);
-        to_dos_file_name(f->name, file_name, NAME_LEN);
-        
-        device_t *dev = get_dev_by_id(f->dev);
-        uint32_t phys_sector = 32 + (f->current_cluster - 1);
-        memset(dma_buffer, 0, SECTOR_SIZE);
-        memcpy(dma_buffer, str, strlen(str));
-        dev->write(phys_sector);
-        f->len++;
-        
-        uint8_t *buf;
-        directory_t *dir;
-        
-        for(int i = 0; i < 4; i++) {
-            buf = (unsigned char *) dev->read(dev->minfo.root_offset + i);
-            dir = (directory_t *) buf;
-            for(int j = 0; j < 16; j++) {
-                char name[NAME_LEN];
-                memcpy(name, dir->filename, NAME_LEN);
-                name[NAME_LEN] = 0;
-                if(strncmp(file_name, name, NAME_LEN) == 0) {
-                    dir->file_size = f->len;
-                    dev->write(dev->minfo.root_offset + i);
-                    kfree(file_name);
-                    return;
-                }
-                dir++;
+    if(!f)
+        return;
+    
+    char *dos_file_name = kmalloc(NAME_LEN);
+    to_dos_file_name(f->name, dos_file_name);
+    
+    device_t *dev = get_dev_by_id(f->dev);
+    memset(dma_buffer, 0, SECTOR_SIZE);
+    memcpy(dma_buffer, str, strlen(str));
+    dev->write(get_phys_sector(f));
+    f->len++;
+    
+    for(int i = 0; i < 4; i++) {
+        directory_t *dir = (directory_t *) dev->read(dev->minfo.root_offset + i);
+        for(int j = 0; j < 16; j++) {
+            if(strncmp(dos_file_name, (char *) dir->filename, NAME_LEN) == 0) {
+                dir->file_size = f->len;
+                dev->write(dev->minfo.root_offset + i);
+                kfree(dos_file_name);
+                return;
             }
+            dir++;
         }
-        kfree(file_name);
     }
+    kfree(dos_file_name);
 }
 
 void fat_close(file *f) {
@@ -242,43 +222,41 @@ void fat_close(file *f) {
 
 file fat_directory(char *dir_name, int devid) {
     file f;
-    directory_t *dir;
-    char *file_name = kmalloc(NAME_LEN);
-    to_dos_file_name(dir_name, file_name, NAME_LEN);
+    char *dos_file_name = kmalloc(NAME_LEN);
+    to_dos_file_name(dir_name, dos_file_name);
     
     device_t *dev = get_dev_by_id(devid);
     
     for(int i = 0; i < 14; i++) {
-        dir = (directory_t *) dev->read(dev->minfo.root_offset + i);
-        f = fat_fill_file(file_name, dir, dir_name, devid);
+        directory_t *dir = (directory_t *) dev->read(dev->minfo.root_offset + i);
+        f = fat_fill_file(dos_file_name, dir, dir_name, devid);
         if(f.type != FS_NULL) {
-            kfree(file_name);
+            kfree(dos_file_name);
             return f;
         }
     }
-    kfree(file_name);
+    kfree(dos_file_name);
     return f;
 }
 
 file fat_open_subdir(file directory, char *name) {
     file f;
-    directory_t *dir;
-    char *file_name = kmalloc(NAME_LEN);
-    to_dos_file_name(name, file_name, NAME_LEN);
+    char *dos_file_name = kmalloc(NAME_LEN);
+    to_dos_file_name(name, dos_file_name);
     char *buf = kmalloc(SECTOR_SIZE);
     
     while(!directory.eof) {
         fat_read(&directory, buf);
-        dir = (directory_t *) buf;
-        f = fat_fill_file(file_name, dir, name, directory.dev);
+        directory_t *dir = (directory_t *) buf;
+        f = fat_fill_file(dos_file_name, dir, name, directory.dev);
         if(f.type != FS_NULL) {
             kfree(buf);
-            kfree(file_name);
+            kfree(dos_file_name);
             return f;
         }
     }
     kfree(buf);
-    kfree(file_name);
+    kfree(dos_file_name);
     return f;
 }
 
@@ -358,31 +336,19 @@ file fat_search(char *name) {
 }
 
 void fat_ls(char *dir) {
-    directory_t *direc;
-    uint8_t *buf;
-    
-    char *file_name = kmalloc(NAME_LEN);
-    to_dos_file_name(dir, file_name, NAME_LEN);
-    
     char *normal_name = kmalloc(NAME_LEN);
     
     device_t *dev = get_dev_by_name(dir);
     for(int i = 0; i < 14; i++) {
-        buf = (unsigned char *) dev->read(dev->minfo.root_offset + i);
-        direc = (directory_t *) buf;
-        for(int j = 0; j < 16; j++) {
-            char name[NAME_LEN];
-            memcpy(name, direc->filename, NAME_LEN);
-            direc++;
-            name[NAME_LEN] = 0;
-            if(name[0] == 0)
+        directory_t *direc = (directory_t *) dev->read(dev->minfo.root_offset + i);
+        for(int j = 0; j < 16; j++, direc++) {
+            if(((char *) direc->filename)[0] == 0)
                 continue;
-            to_normal_file_name(name, normal_name, NAME_LEN);
+            to_normal_file_name((char *) direc->filename, normal_name);
             printk("%s  ", normal_name);
         }
     }
     printk("\n");
-    kfree(file_name);
     kfree(normal_name);
 }
 
