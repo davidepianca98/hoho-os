@@ -87,18 +87,23 @@ typedef struct directory {
     uint32_t file_size;
 } __attribute__((__packed__)) directory_t;
 
+#define NAME_LEN 11
+
 void fat_mount(device_t *dev);
 void to_dos_file_name(char *name, char *str, int len);
 void to_normal_file_name(char *name, char *str, int len);
 file fat_directory(char *dir_name, int devid);
+int fat_touch(char *name);
 void fat_read(file *f, char *buf);
 void fat_write(file *f, char *str);
 void fat_close(file *f);
-file fat_open_subdir(file f, char *name);
+file fat_open_subdir(file directory, char *name);
+file fat_fill_file(char *file_name, directory_t *dir, char* dir_name, int devid);
 file fat_open(char *name);
 void fat_init(filesystem *fs_fat);
 void fat_ls(char *dir);
 file fat_cd(char *dir);
+file fat_search(char *name);
 
 #endif
 
