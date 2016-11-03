@@ -32,7 +32,7 @@ void console_write(char *dir, char *command);
 void console_touch(char *dir, char *command);
 void console_delete(char *dir, char *command);
 char *console_pwd();
-void print_file(file f);
+void print_file(file *f);
 void print_meminfo();
 char *get_argument(char *command, int n);
 

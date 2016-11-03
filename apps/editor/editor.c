@@ -1,15 +1,13 @@
 #include <stdio.h>
 #include <string.h>
-#include <system_calls.h>
 
 int main(int argc, char **argv) {
-    char s[64];
-    printf("File to edit: ");
-    scanf("%s", s);
+    if(argc < 2)
+        return 1;
     
-    FILE *f = fopen(s, "r");
+    FILE *f = fopen(argv[1], "r");
     //system("clear");
+    fclose(f);
     
     return 0;
 }
-

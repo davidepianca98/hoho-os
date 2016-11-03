@@ -21,10 +21,10 @@
 
 void *malloc(size_t len) {
     asm volatile("mov %0, %%ebx" : : "b" (len));
-    return syscall_call(8);
+    return syscall_call(9);
 }
 
 void free(void *ptr) {
     asm volatile("lea (%0), %%ebx" : : "b" (ptr));
-    syscall_call(9);
+    syscall_call(10);
 }

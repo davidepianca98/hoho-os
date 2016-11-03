@@ -94,8 +94,8 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
  */
 int load_elf_file(char *name) {
     // Open the executable
-    file f = vfs_file_open(name, "r");
-    if((f.type == FS_NULL) || (f.type & FS_DIR)) {
+    file *f = vfs_file_open(name, "r");
+    if((f->type == FS_NULL) || (f->type == FS_DIR)) {
         printk("Failed opening file\n");
         return 0;
     }
@@ -103,7 +103,7 @@ int load_elf_file(char *name) {
     // Load the executable in memory
     uint32_t j = 0;
     int file_size = 0;
-    while(f.eof != 1) {
+    while(f->eof != 1) {
         // The executable needs more memory, so reserve it
         if(((j + 8) % 8) == 0) {
             if(!vmm_map(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), PAGE_PRESENT | PAGE_RW)) {
@@ -113,10 +113,10 @@ int load_elf_file(char *name) {
             file_size++;
         }
         // Copy the file into memory
-        vfs_file_read(&f, (char *) MEMORY_LOAD_ADDRESS + (j * 512));
+        vfs_file_read(f, (char *) MEMORY_LOAD_ADDRESS + (j * 512));
         j++;
     }
-    vfs_file_close(&f);
+    vfs_file_close(f);
     return file_size;
 }
 

@@ -24,7 +24,7 @@ void system(char *arg) {
 }
 
 char *pwd() {
-    return (char *) syscall_call(7);
+    return (char *) syscall_call(8);
 }
 
 void end_process_return() {

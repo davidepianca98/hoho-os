@@ -20,6 +20,7 @@
 #include <fs/fat.h>
 #include <drivers/video.h>
 #include <hal/device.h>
+#include <proc/sched.h>
 
 static filesystem *devs[MAX_DEVICES];
 
@@ -85,22 +86,40 @@ int vfs_delete(char *name) {
     return 0;
 }
 
-file vfs_file_open(char *name, char *mode) {
+file *vfs_file_open(char *name, char *mode) {
     int device = get_dev_id_by_name(name);
-    file f;
+    file *f = kmalloc(sizeof(file));
     if(device >= 0) {
         if(devs[device]) {
-            f = devs[device]->open(name + 1);
-            if(f.type == FS_FILE) {
+            *f = devs[device]->open(name + 1);
+            if(f->type == FS_FILE) {
                 if(strcmp(mode, "w") == 0) {
-                    f.len = 0;
+                    f->len = 0;
                 }
                 return f;
             }
         }
     }
-    f.type = FS_NULL;
+    f->type = FS_NULL;
     return f;
+}
+
+file *vfs_file_open_user(char *name, char *mode) {
+    process_t *cur = get_cur_proc();
+    if(cur && cur->thread_list) {
+        file *f = (file *) umalloc(sizeof(file), (vmm_addr_t *) cur->thread_list->heap);
+        int device = get_dev_id_by_name(name);
+        if(device >= 0 && devs[device]) {
+            *f = devs[device]->open(name + 1);
+            if(f->type == FS_FILE) {
+                if(strcmp(mode, "w") == 0) {
+                    f->len = 0;
+                }
+                return f;
+            }
+        }
+    }
+    return NULL;
 }
 
 void vfs_file_read(file *f, char *str) {
@@ -120,8 +139,22 @@ void vfs_file_write(file *f, char *str) {
 
 void vfs_file_close(file *f) {
     if(f) {
-        if(devs[f->dev])
+        if(devs[f->dev]) {
             devs[f->dev]->close(f);
+            kfree(f);
+        }
+    }
+}
+
+void vfs_file_close_user(file *f) {
+    if(f) {
+        if(devs[f->dev]) {
+            devs[f->dev]->close(f);
+            process_t *cur = get_cur_proc();
+            if(cur && cur->thread_list) {
+                ufree(f, (vmm_addr_t *) cur->thread_list->heap);
+            }
+        }
     }
 }
 

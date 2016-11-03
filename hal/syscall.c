@@ -26,16 +26,17 @@
 typedef uint32_t (*syscall_call_func)(uint32_t, ...);
 
 static void *syscalls[] = {
-    &printk,            // printf
-    &gets,              // scanf
-    &clear,             // clear
-    &start_thread,
-    &stop_thread,
-    &end_process,       // return n
-    &vfs_file_open,     // fopen
-    &console_pwd,       // PWD
-    &umalloc_sys,       // malloc
-    &ufree_sys          // free
+    &printk,                    // printf   0
+    &gets,                      // scanf    1
+    &clear,                     // clear    2
+    &start_thread,              // fork     3
+    &stop_thread,               // exit     4
+    &end_process,               // return n 5
+    &vfs_file_open_user,        // fopen    6
+    &vfs_file_close_user,       // fclose   7
+    &console_pwd,               // PWD      8
+    &umalloc_sys,               // malloc   9
+    &ufree_sys                  // free     10
 };
 
 void syscall_init() {

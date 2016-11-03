@@ -32,6 +32,7 @@ typedef struct {
 void printf(char *buffer, ...);
 void scanf(char *format, ...);
 FILE *fopen(char *filename, char *mode);
+void fclose(FILE *f);
 
 #endif
 

@@ -81,3 +81,8 @@ FILE *fopen(char *filename, char *mode) {
     asm volatile("lea (%0), %%ecx" : : "c" (mode));
     return (FILE *) syscall_call(6);
 }
+
+void fclose(FILE *f) {
+    asm volatile("lea (%0), %%ebx" : : "b" (f));
+    syscall_call(7);
+}

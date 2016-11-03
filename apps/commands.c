@@ -67,6 +67,7 @@ void console_start(char *dir, char *command) {
     if(procn != PROC_STOPPED) {
         while(proc_state(procn) != PROC_STOPPED);
         remove_proc(procn);
+        printk("\n");
     }
 }
 
@@ -78,13 +79,13 @@ void console_read(char *dir, char *command) {
     strcpy(senddir, dir);
     strcat(senddir, "/");
     strcat(senddir, get_argument(command, 1));
-    file f = vfs_file_open(senddir, "r");
-    if(f.type != FS_FILE) {
+    file *f = vfs_file_open(senddir, "r");
+    if(f->type != FS_FILE) {
         printk("read: file %s not found\n", senddir);
     } else {
         print_file(f);
     }
-    vfs_file_close(&f);
+    vfs_file_close(f);
 }
 
 /**
@@ -96,13 +97,13 @@ void console_write(char *dir, char *command) {
     strcat(senddir, "/");
     strcat(senddir, get_argument(command, 1));
     
-    file f = vfs_file_open(senddir, "w");
-    if(f.type != FS_FILE) {
+    file *f = vfs_file_open(senddir, "w");
+    if(f->type != FS_FILE) {
         printk("write: file %s not found\n", senddir);
     } else {
-        vfs_file_write(&f, get_argument(command, 2));
+        vfs_file_write(f, get_argument(command, 2));
     }
-    vfs_file_close(&f);
+    vfs_file_close(f);
 }
 
 /**
@@ -143,25 +144,25 @@ char *console_pwd() {
 /**
  * Prints the content of the file
  */
-void print_file(file f) {
-    if(f.type == FS_NULL) {
+void print_file(file *f) {
+    if(f->type == FS_NULL) {
         printk("Cannot open file\n");
         return;
     }
 
-    if((f.type & FS_DIR) == FS_DIR) {
+    if((f->type & FS_DIR) == FS_DIR) {
         printk("Cannot display content of directory.\n");
         return;
     }
 
-    while(f.eof != 1) {
+    while(f->eof != 1) {
         char buf[512];
-        vfs_file_read(&f, buf);
+        vfs_file_read(f, buf);
 
         for(int i = 0; i < 512; i++)
             printk("%c", buf[i]);
 
-        if(f.eof != 1) {
+        if(f->eof != 1) {
         	getchar();
         }
     }

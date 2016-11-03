@@ -146,27 +146,25 @@ int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
  */
 int heap_fill(thread_t *thread, char *name, char *arguments, uint32_t *argc, uint32_t *argv1) {
     *argc = 1;
-    char *argv = (char *) umalloc(strlen(name) + strlen(arguments) + 10, (vmm_addr_t *) thread->heap);
-    strcpy(argv, name);
+    char **argv = (char **) umalloc(10 * sizeof(char *), (vmm_addr_t *) thread->heap);
+    argv[0] = (char *) umalloc(strlen(name) + 1, (vmm_addr_t *) thread->heap);
+    strcpy(argv[0], name);
     
-    char *argv_c = argv;
-    // TODO fix arguments
     while(*arguments) {
         char *p = strchr(arguments, ' ');
         if(p == NULL) {
-            strcpy(argv_c, arguments);
+            argv[*argc] = (char *) umalloc(strlen(arguments) + 1, (vmm_addr_t *) thread->heap);
+            strcpy(argv[*argc], arguments);
             (*argc)++;
             break;
         }
         int strl = strlen(arguments) - strlen(p);
-        strncpy(argv_c, arguments, strl);
+        argv[*argc] = (char *) umalloc(strl + 1, (vmm_addr_t *) thread->heap);
+        strncpy(argv[*argc], arguments, strl);
         (*argc)++;
-        while(strl > 0) {
+        while(strl--) {
             arguments++;
-            argv_c++;
-            strl--;
         }
-        strcat(argv_c, "\n");
         arguments++;
     }
     *argv1 = (uint32_t) argv;
