@@ -87,6 +87,7 @@ void scroll() {
 }
 
 void clear() {
+    x = y = 0;
     for(int i = 0; i < vram.heigth * vram.width; i++) {
         *(vram.ram + i) = (uint16_t) 3872;
     }

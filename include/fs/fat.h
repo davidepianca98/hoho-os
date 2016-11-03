@@ -93,18 +93,20 @@ void fat_mount(device_t *dev);
 void to_dos_file_name(char *name, char *str);
 void to_normal_file_name(char *name, char *str);
 uint32_t get_phys_sector(file *f);
-file fat_directory(char *dir_name, int devid);
+directory_t *fat_get_dir(file *f);
 int fat_touch(char *name);
 void fat_read(file *f, char *buf);
 void fat_write(file *f, char *str);
+int fat_delete(char *name);
 void fat_close(file *f);
+file fat_directory(char *dir_name, int devid);
 file fat_open_subdir(file directory, char *name);
 file fat_fill_file(char *file_name, directory_t *dir, char* dir_name, int devid);
 file fat_open(char *name);
-void fat_init(filesystem *fs_fat);
-void fat_ls(char *dir);
 file fat_cd(char *dir);
 file fat_search(char *name);
+void fat_ls(char *dir);
+void fat_init(filesystem *fs_fat);
 
 #endif
 

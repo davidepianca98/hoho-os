@@ -26,6 +26,8 @@ extern uint32_t *dma_buffer;
 
 uint8_t FAT[SECTOR_SIZE * 2];
 
+int offset;
+
 void fat_mount(device_t *dev) {
     // Trying with bootsector
     bootsector_t *bs = (bootsector_t *) dev->read(0);
@@ -123,12 +125,31 @@ uint32_t get_phys_sector(file *f) {
     return 32 + f->current_cluster - 1;
 }
 
+directory_t *fat_get_dir(file *f) {
+    char *dos_file_name = kmalloc(NAME_LEN);
+    to_dos_file_name(f->name, dos_file_name);
+    device_t *dev = get_dev_by_id(f->dev);
+    
+    for(int i = 0; i < 16; i++) {
+        directory_t *dir = (directory_t *) dev->read(dev->minfo.root_offset + i);
+        for(int j = 0; j < 14; j++, dir++) {
+            if(strncmp(dos_file_name, (char *) dir->filename, NAME_LEN) == 0) {
+                offset = i;
+                kfree(dos_file_name);
+                return dir;
+            }
+        }
+    }
+    kfree(dos_file_name);
+    return NULL;
+}
+
 int fat_touch(char *name) {
     file f = fat_search(name);
     if(f.type != FS_NULL) {
         return 0;
     }
-    
+    // TODO
 }
 
 void fat_read(file *f, char *buf) {
@@ -200,19 +221,27 @@ void fat_write(file *f, char *str) {
     dev->write(get_phys_sector(f));
     f->len++;
     
-    for(int i = 0; i < 4; i++) {
-        directory_t *dir = (directory_t *) dev->read(dev->minfo.root_offset + i);
-        for(int j = 0; j < 16; j++) {
-            if(strncmp(dos_file_name, (char *) dir->filename, NAME_LEN) == 0) {
-                dir->file_size = f->len;
-                dev->write(dev->minfo.root_offset + i);
-                kfree(dos_file_name);
-                return;
-            }
-            dir++;
-        }
+    directory_t *dir = fat_get_dir(f);
+    if(dir) {
+        dir->file_size = f->len;
+        dev->write(dev->minfo.root_offset + offset);
     }
-    kfree(dos_file_name);
+}
+
+int fat_delete(char *name) {
+    file f = fat_search(name);
+    if(f.type == FS_NULL) {
+        return 0;
+    }
+    
+    device_t *dev = get_dev_by_id(f.dev);
+    directory_t *dir = fat_get_dir(&f);
+    if(dir) {
+        memset(dir, 0, sizeof(directory_t));
+        dev->write(dev->minfo.root_offset + offset);
+        return 1;
+    }
+    return 0;
 }
 
 void fat_close(file *f) {
@@ -282,23 +311,11 @@ file fat_fill_file(char *file_name, directory_t *dir, char* dir_name, int devid)
 }
 
 file fat_open(char *name) {
-    file f = fat_search(name);
-    if(f.type == FS_FILE || f.type == FS_NULL) {
-        return f;
-    } else {
-        f.type = FS_NULL;
-        return f;
-    }
+    return fat_search(name);
 }
 
 file fat_cd(char *dir) {
-    file f = fat_search(dir);
-    if(f.type == FS_DIR || f.type == FS_NULL) {
-        return f;
-    } else {
-        f.type = FS_NULL;
-        return f;
-    }
+    return fat_search(dir);
 }
 
 file fat_search(char *name) {
@@ -361,5 +378,7 @@ void fat_init(filesystem *fs_fat) {
     fs_fat->open = &fat_open;
     fs_fat->ls = &fat_ls;
     fs_fat->cd = &fat_cd;
+    fs_fat->touch = &fat_touch;
+    fs_fat->delete = &fat_delete;
 }
 

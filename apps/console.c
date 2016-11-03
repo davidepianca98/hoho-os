@@ -99,6 +99,10 @@ void console_exec(char *buf) {
         console_read(dir, buf);
     } else if(strncmp(buf, "write", 5) == 0) {
         console_write(dir, buf);
+    } else if(strncmp(buf, "touch", 5) == 0) {
+        console_touch(dir, buf);
+    } else if(strncmp(buf, "delete", 6) == 0) {
+        console_delete(dir, buf);
     } else if(strcmp(buf, "hoho") == 0) {
         printk("hoho\n");
     } else if(strcmp(buf, "help") == 0) {

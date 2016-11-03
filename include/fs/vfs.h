@@ -40,6 +40,8 @@ typedef struct {
     file (*open) (char *name);
     void (*ls) (char *dir);
     file (*cd) (char *dir);
+    int (*touch) (char *name);
+    int (*delete) (char *name);
 } filesystem;
 
 #define FS_FILE     0
@@ -50,6 +52,8 @@ void vfs_init();
 void vfs_ls();
 void vfs_ls_dir(char *dir);
 int vfs_cd(char *name);
+int vfs_touch(char *name);
+int vfs_delete(char *name);
 file vfs_file_open(char *name, char *mode);
 void vfs_file_read(file *f, char *str);
 void vfs_file_write(file *f, char *str);

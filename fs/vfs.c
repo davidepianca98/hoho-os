@@ -65,16 +65,38 @@ int vfs_cd(char *name) {
     return 0;
 }
 
+int vfs_touch(char *name) {
+    int device = get_dev_id_by_name(name);
+    if(device >= 0) {
+        if(devs[device]) {
+            return devs[device]->touch(name + 1);
+        }
+    }
+    return 0;
+}
+
+int vfs_delete(char *name) {
+    int device = get_dev_id_by_name(name);
+    if(device >= 0) {
+        if(devs[device]) {
+            return devs[device]->delete(name + 1);
+        }
+    }
+    return 0;
+}
+
 file vfs_file_open(char *name, char *mode) {
     int device = get_dev_id_by_name(name);
     file f;
     if(device >= 0) {
         if(devs[device]) {
             f = devs[device]->open(name + 1);
-            if(strcmp(mode, "w") == 0) {
-                f.len = 0;
+            if(f.type == FS_FILE) {
+                if(strcmp(mode, "w") == 0) {
+                    f.len = 0;
+                }
+                return f;
             }
-            return f;
         }
     }
     f.type = FS_NULL;

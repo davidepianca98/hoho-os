@@ -84,7 +84,7 @@ void console_read(char *dir, char *command) {
     } else {
         print_file(f);
     }
-    printk("\n");
+    vfs_file_close(&f);
 }
 
 /**
@@ -101,6 +101,35 @@ void console_write(char *dir, char *command) {
         printk("write: file %s not found\n", senddir);
     } else {
         vfs_file_write(&f, get_argument(command, 2));
+    }
+    vfs_file_close(&f);
+}
+
+/**
+ * Creates a file
+ */
+void console_touch(char *dir, char *command) {
+    memset(senddir, 0, 64);
+    strcpy(senddir, dir);
+    strcat(senddir, "/");
+    strcat(senddir, get_argument(command, 1));
+    
+    if(!vfs_touch(senddir)) {
+        printk("touch: Error creating file\n");
+    }
+}
+
+/**
+ * Deletes a file
+ */
+void console_delete(char *dir, char *command) {
+    memset(senddir, 0, 64);
+    strcpy(senddir, dir);
+    strcat(senddir, "/");
+    strcat(senddir, get_argument(command, 1));
+    
+    if(!vfs_delete(senddir)) {
+        printk("delete: Error deleting file\n");
     }
 }
 

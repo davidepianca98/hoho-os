@@ -29,6 +29,8 @@ void console_cd(char *dir, char *command);
 void console_start(char *dir, char *command);
 void console_read(char *dir, char *command);
 void console_write(char *dir, char *command);
+void console_touch(char *dir, char *command);
+void console_delete(char *dir, char *command);
 char *console_pwd();
 void print_file(file f);
 void print_meminfo();
