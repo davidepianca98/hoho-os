@@ -101,7 +101,6 @@ int fat_delete(char *name);
 void fat_close(file *f);
 file fat_directory(char *dir_name, int devid);
 file fat_open_subdir(file directory, char *name);
-file fat_fill_file(char *file_name, directory_t *dir, char* dir_name, int devid);
 file fat_open(char *name);
 file fat_cd(char *dir);
 file fat_search(char *name);

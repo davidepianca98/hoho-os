@@ -32,7 +32,6 @@ typedef struct {
 } file;
 
 typedef struct {
-    file (*directory) (char *dir, int devid);
     void (*mount) ();
     void (*read) (file *f, char *str);
     void (*write) (file *f, char *str);

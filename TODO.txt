@@ -1,7 +1,6 @@
 TODO:
 - priority scheduling
-- fat touch
-- fat delete
+- fat mkdir
 - partitions
 - ata write
 - test fat32 and fat16
@@ -9,4 +8,3 @@ TODO:
 - text editor
 - better keyboard drivers
 - pci
-- unify exceptions
