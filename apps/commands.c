@@ -20,6 +20,7 @@
 #include <fs/vfs.h>
 #include <lib/string.h>
 #include <proc/proc.h>
+#include <proc/sched.h>
 
 char senddir[64];
 
@@ -139,6 +140,17 @@ void console_delete(char *dir, char *command) {
  */
 char *console_pwd() {
     return get_dir();
+}
+
+char *console_pwd_user() {
+    process_t *cur = get_cur_proc();
+    if(cur && cur->thread_list) {
+        char *dir = console_pwd();
+        char *pwd_dir = (char *) umalloc(strlen(dir), (vmm_addr_t *) cur->thread_list->heap);
+        strcpy(pwd_dir, dir);
+        return pwd_dir;
+    }
+    return NULL;
 }
 
 /**

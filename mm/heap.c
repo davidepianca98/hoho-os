@@ -31,13 +31,35 @@ void heap_init(vmm_addr_t *addr) {
     heap_info->used = sizeof(heap_header_t);
     heap_info->first_header = (heap_header_t *) heap_info->start;
     heap_info->first_header->magic = HEAP_MAGIC;
-    heap_info->first_header->size = heap_info->size;
+    heap_info->first_header->size = heap_info->size - heap_info->used;
     heap_info->first_header->is_free = 1;
     heap_info->first_header->next = NULL;
 }
 
 void *umalloc(size_t len, vmm_addr_t *heap) {
-    return first_free_usr(len, heap);
+    heap_info_t *heap_info = (heap_info_t *) heap;
+    heap_header_t *head = (heap_header_t *) heap_info->first_header;
+    
+    if(heap_info->used >= heap_info->size)
+        return NULL;
+    
+    while((head != NULL) && ((vmm_addr_t *) head < heap + PAGE_SIZE)) {
+        if((head->size >= len) && (head->is_free == 1) && (head->magic == HEAP_MAGIC)) {
+            head->is_free = 0;
+            heap_header_t *head2 = (heap_header_t *) head + len + sizeof(heap_header_t);
+            head2->size = head->size - len - sizeof(heap_header_t);
+            head2->magic = HEAP_MAGIC;
+            head2->is_free = 1;
+            head2->next = NULL;
+            head->next = head2;
+            head->size = len;
+            heap_info->used += len + sizeof(heap_header_t);
+            return (void *) head + sizeof(heap_header_t);
+        }
+        head = head->next;
+    }
+    printk("\nOut of memory\n");
+    return NULL;
 }
 
 void ufree(void *ptr, vmm_addr_t *heap) {
@@ -56,31 +78,6 @@ void ufree(void *ptr, vmm_addr_t *heap) {
             app = app->next;
         }
     }
-}
-
-void *first_free_usr(size_t len, vmm_addr_t *heap) {
-    heap_info_t *heap_info = (heap_info_t *) heap;
-    heap_header_t *head = (heap_header_t *) heap_info->first_header;
-    
-    if(heap_info->used >= heap_info->size)
-        return NULL;
-    
-    while(head != NULL) {
-        if((head->size >= len) && (head->is_free == 1) && (head->magic == HEAP_MAGIC)) {
-            head->is_free = 0;
-            heap_header_t *head2 = (heap_header_t *) head + len + sizeof(heap_header_t);
-            head2->size = head->size - len - sizeof(heap_header_t);
-            head2->magic = HEAP_MAGIC;
-            head2->is_free = 1;
-            head2->next = NULL;
-            head->next = head2;
-            head->size = len;
-            heap_info->used += len + sizeof(heap_header_t);
-            return (void *) head + sizeof(heap_header_t);
-        }
-        head = head->next;
-    }
-    return NULL;
 }
 
 void *umalloc_sys(size_t len) {

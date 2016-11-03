@@ -21,7 +21,7 @@
 #include <proc/thread.h>
 #include <drivers/keyboard.h>
 
-#define MAX_SYSCALL 10
+#define MAX_SYSCALL 11
 
 typedef uint32_t (*syscall_call_func)(uint32_t, ...);
 
@@ -34,7 +34,7 @@ static void *syscalls[] = {
     &end_process,               // return n 5
     &vfs_file_open_user,        // fopen    6
     &vfs_file_close_user,       // fclose   7
-    &console_pwd,               // PWD      8
+    &console_pwd_user,          // PWD      8
     &umalloc_sys,               // malloc   9
     &ufree_sys                  // free     10
 };

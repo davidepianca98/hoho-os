@@ -16,11 +16,13 @@
 
 #include <drivers/audio.h>
 #include <drivers/io.h>
+#include <drivers/video.h>
 #include <panic.h>
 
 void panic() {
     disable_int();
     beep(1);
+    printk("\nPANIC");
     while(1);
 }
 

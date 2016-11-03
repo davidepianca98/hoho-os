@@ -33,7 +33,7 @@ void kheap_init() {
     heap_info.used = sizeof(heap_header_t);
     heap_info.first_header = (heap_header_t *) heap_info.start;
     heap_info.first_header->magic = HEAP_MAGIC;
-    heap_info.first_header->size = heap_info.size;
+    heap_info.first_header->size = heap_info.size - heap_info.used;
     heap_info.first_header->is_free = 1;
     heap_info.first_header->next = NULL;
 }

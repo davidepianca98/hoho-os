@@ -39,7 +39,6 @@ typedef struct {
 void heap_init(vmm_addr_t *addr);
 void *umalloc(size_t len, vmm_addr_t *heap);
 void ufree(void *ptr, vmm_addr_t *heap);
-void *first_free_usr(size_t len, vmm_addr_t *heap);
 void *umalloc_sys(size_t len);
 void ufree_sys(void *ptr);
 

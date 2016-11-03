@@ -204,11 +204,10 @@ int vsprintf(char *str, char *format, va_list args) {
 }
 
 char *strchr(char *str, int c) {
-    char *p = str;
-    while(*p != '\0') {
-        if(*p == c)
-            return p;
-        p++;
+    while(*str) {
+        if(*str == c)
+            return str;
+        str++;
     }
     return NULL;
 }

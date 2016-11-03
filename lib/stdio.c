@@ -15,12 +15,13 @@
  */
 
 #include <lib/stdio.h>
+#include <lib/stdlib.h>
 #include <types.h>
 #include <lib/string.h>
 #include <lib/system_calls.h>
 
 void printf(char *buffer, ...) {
-    char str[256];
+    char *str = (char *) malloc(256);
     va_list args;
     
     va_start(args, buffer);
@@ -31,13 +32,14 @@ void printf(char *buffer, ...) {
     asm volatile("lea (%0), %%ebx" : : "b" (str));
     asm volatile("xor %eax, %eax; \
                   int $0x72");
+    free(str);
 }
 
 void scanf(char *format, ...) {
     va_list args;
     int *d;
     char *c;
-    char str[256];
+    char *str = (char *) malloc(256);
     
     va_start(args, format);
     for(int i = 0; i < strlen(format); i++) {
@@ -69,17 +71,20 @@ void scanf(char *format, ...) {
         }
     }
     va_end(args);
+    free(str);
 }
 
 FILE *fopen(char *filename, char *mode) {
-    char file[256];
+    char *file = (char *) malloc(256);
     strcpy(file, pwd());
     strcat(file, "/");
     strcat(file, filename);
     
     asm volatile("lea (%0), %%ebx" : : "b" (file));
     asm volatile("lea (%0), %%ecx" : : "c" (mode));
-    return (FILE *) syscall_call(6);
+    FILE *f = (FILE *) syscall_call(6);
+    free(file);
+    return f;
 }
 
 void fclose(FILE *f) {

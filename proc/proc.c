@@ -126,7 +126,6 @@ int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
  * Builds the heap for a userspace thread
  */
 int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
-    // build the heap
     vmm_addr_t heap = thread->stack_kernel_limit + (PAGE_SIZE * 3 * nthreads);
     
     if(!vmm_map(get_kern_directory(), heap, PAGE_PRESENT | PAGE_RW) ||
