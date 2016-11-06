@@ -26,7 +26,7 @@
 typedef uint32_t (*syscall_call_func)(uint32_t, ...);
 
 static void *syscalls[] = {
-    &printk,                    // printf   0
+    &printk_string,             // printf   0
     &gets,                      // scanf    1
     &clear,                     // clear    2
     &start_thread,              // fork     3

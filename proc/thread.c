@@ -122,7 +122,9 @@ void stop_thread(int code) {
     
     vmm_unmap(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
     vmm_unmap(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
-    vmm_unmap(cur->pdir, cur->thread_list->heap);
+    for(int i = 0; i < 4; i++) {
+        vmm_unmap(cur->pdir, cur->thread_list->heap + (i * PAGE_SIZE));
+    }
     
     kfree(thread);
     

@@ -131,7 +131,7 @@ directory_t *fat_get_dir(file *f) {
     device_t *dev = get_dev_by_id(f->dev);
     
     for(int i = 0; i < 14; i++) {
-        directory_t *dir = (directory_t *) dev->read(dev->minfo.root_offset + i);
+        directory_t *dir = (directory_t *) dev->read(dev->minfo.root_offset + i); // STUCK HERE WITH FOPEN
         for(int j = 0; j < 16; j++, dir++) {
             if(strncmp(dos_file_name, (char *) dir->filename, NAME_LEN) == 0) {
                 offset = i;

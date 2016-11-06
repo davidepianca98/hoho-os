@@ -110,7 +110,8 @@ file *vfs_file_open_user(char *name, char *mode) {
         file *f = (file *) umalloc(sizeof(file), (vmm_addr_t *) cur->thread_list->heap);
         int device = get_dev_id_by_name(name);
         if(device >= 0 && devs[device]) {
-            *f = devs[device]->open(name + 1);
+            file fil = devs[device]->open(name + 1);
+            memcpy(f, &fil, sizeof(file));
             if(f->type == FS_FILE) {
                 if(strcmp(mode, "w") == 0) {
                     f->len = 0;

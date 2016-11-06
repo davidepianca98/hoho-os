@@ -30,7 +30,6 @@ void video_init(int h, int w) {
 }
 
 void printk(char *buffer, ...) {
-    int i = 0;
     char str[256];
     va_list args;
     
@@ -38,10 +37,16 @@ void printk(char *buffer, ...) {
     vsprintf(str, buffer, args);
     va_end(args);
     
+    printk_string(str);
+}
+
+void printk_string(char *buffer) {
+    int i = 0;
+    
     check();
     
-    while(str[i] != '\0') {
-        switch(str[i]) {
+    while(buffer[i] != '\0') {
+        switch(buffer[i]) {
             case '\0':
                 return;
             case '\b':
@@ -60,7 +65,7 @@ void printk(char *buffer, ...) {
                 break;
             default:
                 check();
-                vram.ram[(y * vram.width) + x++] = (uint16_t) (3840 | str[i++]);
+                vram.ram[(y * vram.width) + x++] = (uint16_t) (3840 | buffer[i++]);
                 break;
         }
     }

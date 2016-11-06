@@ -247,7 +247,7 @@ int floppy_calibrate(uint32_t drive) {
     return -1;
 }
 
-void floppy_check_int(uint32_t * st0, uint32_t *cyl) {
+void floppy_check_int(uint32_t *st0, uint32_t *cyl) {
     floppy_send_cmd(FLOPPY_CMD_CHECK_INT);
     *st0 = floppy_read_data();
     *cyl = floppy_read_data();

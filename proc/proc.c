@@ -104,7 +104,7 @@ int start_proc(char *name, char *arguments) {
  */
 int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
     // Build the user stack
-    thread->esp = (uint32_t) (thread->image_base + thread->image_size + (PAGE_SIZE * 3 * nthreads));
+    thread->esp = (uint32_t) (thread->image_base + thread->image_size + (PAGE_SIZE * 6 * nthreads));
     thread->stack_limit = ((uint32_t) thread->esp + PAGE_SIZE);
     
     if(!vmm_map(get_kern_directory(), thread->esp, PAGE_PRESENT | PAGE_RW) ||
@@ -126,14 +126,16 @@ int build_stack(thread_t *thread, page_dir_t *pdir, int nthreads) {
  * Builds the heap for a userspace thread
  */
 int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads) {
-    vmm_addr_t heap = thread->stack_kernel_limit + (PAGE_SIZE * 3 * nthreads);
+    vmm_addr_t heap = thread->stack_kernel_limit + (PAGE_SIZE * 6 * nthreads);
     
-    if(!vmm_map(get_kern_directory(), heap, PAGE_PRESENT | PAGE_RW) ||
-        !vmm_map_phys(pdir, heap, (uint32_t) get_phys_addr(get_kern_directory(), heap), PAGE_PRESENT | PAGE_RW | PAGE_USER))
-        return 0;
+    for(int i = 0; i < 4; i++) {
+        if(!vmm_map(get_kern_directory(), heap + (i * PAGE_SIZE), PAGE_PRESENT | PAGE_RW) ||
+           !vmm_map_phys(pdir, heap + (i * PAGE_SIZE), (uint32_t) get_phys_addr(get_kern_directory(), heap + (i * PAGE_SIZE)), PAGE_PRESENT | PAGE_RW | PAGE_USER))
+            return 0;
+    }
     
     thread->heap = heap;
-    thread->heap_limit = heap + PAGE_SIZE;
+    thread->heap_limit = heap + (PAGE_SIZE * 4);
     
     heap_init((vmm_addr_t *) heap);
 
@@ -249,7 +251,9 @@ void remove_proc(int pid) {
         }
         vmm_unmap(cur->pdir, cur->thread_list->stack_limit - PAGE_SIZE);
         vmm_unmap(cur->pdir, cur->thread_list->stack_kernel_limit - PAGE_SIZE);
-        vmm_unmap(cur->pdir, cur->thread_list->heap);
+        for(int i = 0; i < 4; i++) {
+            vmm_unmap(cur->pdir, cur->thread_list->heap + (i * PAGE_SIZE));
+        }
         
         thread_t *thread = cur->thread_list;
         cur->thread_list = cur->thread_list->next;

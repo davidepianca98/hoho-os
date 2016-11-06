@@ -5,6 +5,7 @@
 
 void video_init(int h, int w);
 void printk(char *buffer, ...);
+void printk_string(char *buffer);
 void check();
 void scroll();
 void clear();
@@ -28,7 +29,7 @@ typedef struct vbe_info_block {
     uint32_t oem_roduct_rev_ptr;
     uint8_t reserved[222];
     uint8_t oem_data[256];
-} vbe_info_block_t;
+} __attribute__((__packed__)) vbe_info_block_t;
 
 #endif
 

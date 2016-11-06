@@ -27,7 +27,7 @@
 void heap_init(vmm_addr_t *addr) {
     heap_info_t *heap_info = (heap_info_t *) addr;
     heap_info->start = addr + sizeof(heap_info_t);
-    heap_info->size = PAGE_SIZE - sizeof(heap_info_t);
+    heap_info->size = (PAGE_SIZE * 4) - sizeof(heap_info_t);
     heap_info->used = sizeof(heap_header_t);
     heap_info->first_header = (heap_header_t *) heap_info->start;
     heap_info->first_header->magic = HEAP_MAGIC;
@@ -40,10 +40,12 @@ void *umalloc(size_t len, vmm_addr_t *heap) {
     heap_info_t *heap_info = (heap_info_t *) heap;
     heap_header_t *head = (heap_header_t *) heap_info->first_header;
     
-    if(heap_info->used >= heap_info->size)
+    if(heap_info->used >= heap_info->size) {
+        printk("\nOut of memory\n");
         return NULL;
+    }
     
-    while((head != NULL) && ((vmm_addr_t *) head < heap + PAGE_SIZE)) {
+    while((head != NULL) && ((vmm_addr_t *) head < heap + (PAGE_SIZE * 4))) {
         if((head->size >= len) && (head->is_free == 1) && (head->magic == HEAP_MAGIC)) {
             head->is_free = 0;
             heap_header_t *head2 = (heap_header_t *) head + len + sizeof(heap_header_t);
