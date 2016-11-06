@@ -2,6 +2,7 @@
 #define VIDEO_H
 
 #include <types.h>
+#include <multiboot.h>
 
 extern void int32(uint8_t intnum, regs16_t *regs);
 
@@ -11,7 +12,7 @@ void printk_string(char *buffer);
 void check();
 void scroll();
 void clear();
-void vbe_init();
+void vbe_init(multiboot_info_t *info);
 void refresh_screen();
 void put_pixel(int x, int y, int color);
 void put_rect(int x, int y, int w, int h, int color);

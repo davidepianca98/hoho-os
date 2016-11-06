@@ -99,32 +99,20 @@ void clear() {
     }
 }
 
-void vbe_init() {
-    vbe_mode_info_t *vbe_mode = (vbe_mode_info_t *) 0x2000;
-    int ptr = (int) vbe_mode;
-    
-    regs16_t regs = { 0 };
-    regs.ax = 0x4F01;
-    regs.di = ptr & 0xF;
-    regs.es = (ptr >> 4) & 0xFFFF;
-    regs.cx = 0x118;
-    int32(0x10, &regs);
+void vbe_init(multiboot_info_t *info) {
+    vbe_mode_info_t *vbe_mode = (vbe_mode_info_t *) info->vbe_mode_info;
     
     vbemem.buffer_size = vbe_mode->width * vbe_mode->height * (vbe_mode->bpp / 8);
     vbemem.mem = (void *) vbe_mode->framebuffer;
     vbemem.buffer = (void *) VIDEO_MEM_BUFFER;
-    memset(vbemem.buffer, 0, vbemem.buffer_size);
     vbemem.xres = vbe_mode->width;
     vbemem.yres = vbe_mode->height;
     vbemem.bpp = vbe_mode->bpp;
     vbemem.pitch = vbe_mode->pitch;
-    printk("%x\n", vbe_mode->framebuffer);
-    regs.ax = 0x4F02;
-    regs.bx = 0x4118;
-    regs.cx = regs.es = regs.di = 0;
-    //int32(0x10, &regs);
+    
     // TODO start process refresh_screen
-    //put_rect(100, 100, 100, 100, 8);
+    //put_rect(100, 100, 100, 100, 4);
+    //put_pixel(800, 100, 4);
     //memcpy(vbemem.mem, vbemem.buffer, vbemem.buffer_size);
 }
 
