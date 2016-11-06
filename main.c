@@ -28,8 +28,7 @@ int kmain(multiboot_info_t *info) {
     
     video_init(25, 80);
     clear();
-    
-    printk("%x\n%x\n%x\n%x\n%x\n%x\n", info->vbe_control_info, info->vbe_mode_info, info->vbe_mode, info->vbe_interface_seg, info->vbe_interface_off, info->vbe_interface_len);
+    vbe_init(info);
     
     pmm_init(info->mem_high + info->mem_low, (uint32_t *) info->mmap_addr, info->mmap_len);
     vmm_init();

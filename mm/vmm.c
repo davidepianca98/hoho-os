@@ -25,9 +25,11 @@
  * | kernel_end - 0x200000 -> kernel heap           |
  * | 0x200000 - 0x400000 -> paging structures       |
  * |------------------------------------------------|
- * | 0x400000 - 0x401000 -> common space            |
+ * | 0x400000 - 0x600000 -> video memory buffer     |
  * |------------------------------------------------|
- * | 0x401000 - 0x700000 -> free space              |
+ * | 0x600000 - 0x601000 -> common space            |
+ * |------------------------------------------------|
+ * | 0x601000 - 0x700000 -> free space              |
  * |------------------------------------------------|
  * | 0x700000 - 0x800000 -> elf loading space       |
  * |------------------------------------------------|
@@ -59,8 +61,8 @@ void map_kernel(page_dir_t *pdir) {
     vmm_addr_t virt = 0x00000000;
     mm_addr_t phys = 0x0;
     
-    // Identity map first 4MB
-    for(int i = 0; i < 1024; i++, virt += PAGE_SIZE, phys += PAGE_SIZE) {
+    // Identity map first 6MB
+    for(int i = 0; i < 1536; i++, virt += PAGE_SIZE, phys += PAGE_SIZE) {
         if(pdir[virt >> 22] == 0) {
             if(!vmm_create_page_table(pdir, virt, PAGE_PRESENT | PAGE_RW)) {
                 printk("Error creating page table");

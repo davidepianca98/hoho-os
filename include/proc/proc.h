@@ -28,7 +28,7 @@
 #define PROC_ACTIVE     1
 #define PROC_NEW        2
 
-#define RETURN_ADDR 0x400000
+#define RETURN_ADDR 0x600000
 
 struct regs {
     uint32_t ds;

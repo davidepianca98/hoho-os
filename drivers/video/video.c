@@ -20,6 +20,7 @@
 static int x;
 static int y;
 struct video_mem vram;
+struct vbe_mem vbemem;
 
 void video_init(int h, int w) {
     x = 0;
@@ -98,3 +99,58 @@ void clear() {
     }
 }
 
+void vbe_init() {
+    vbe_mode_info_t *vbe_mode = (vbe_mode_info_t *) 0x2000;
+    int ptr = (int) vbe_mode;
+    
+    regs16_t regs = { 0 };
+    regs.ax = 0x4F01;
+    regs.di = ptr & 0xF;
+    regs.es = (ptr >> 4) & 0xFFFF;
+    regs.cx = 0x118;
+    int32(0x10, &regs);
+    
+    vbemem.buffer_size = vbe_mode->width * vbe_mode->height * (vbe_mode->bpp / 8);
+    vbemem.mem = (void *) vbe_mode->framebuffer;
+    vbemem.buffer = (void *) VIDEO_MEM_BUFFER;
+    memset(vbemem.buffer, 0, vbemem.buffer_size);
+    vbemem.xres = vbe_mode->width;
+    vbemem.yres = vbe_mode->height;
+    vbemem.bpp = vbe_mode->bpp;
+    vbemem.pitch = vbe_mode->pitch;
+    printk("%x\n", vbe_mode->framebuffer);
+    regs.ax = 0x4F02;
+    regs.bx = 0x4118;
+    regs.cx = regs.es = regs.di = 0;
+    //int32(0x10, &regs);
+    // TODO start process refresh_screen
+    //put_rect(100, 100, 100, 100, 8);
+    //memcpy(vbemem.mem, vbemem.buffer, vbemem.buffer_size);
+}
+
+void refresh_screen() {
+    while(1) {
+        memcpy(vbemem.mem, vbemem.buffer, vbemem.buffer_size);
+    }
+}
+
+void put_pixel(int x, int y, int color) {
+    if(x < 0 || x > vbemem.xres || y < 0 || y > vbemem.yres)
+        return;
+    x = x * (vbemem.bpp / 8);
+    y = y * vbemem.pitch;
+    
+    register char *c_temp;
+    c_temp = (char *) ((int) vbemem.buffer) + x + y;
+    c_temp[0] = color & 0xFF;
+    c_temp[1] = (color >> 8) & 0xFF;
+    c_temp[2] = (color >> 16) & 0xFF;
+}
+
+void put_rect(int x, int y, int w, int h, int color) {
+    for(int i = 0; i < w; i++) {
+        for(int j = 0; j < h; j++) {
+            put_pixel(x, y, color);
+        }
+    }
+}
