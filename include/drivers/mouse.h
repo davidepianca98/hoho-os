@@ -14,17 +14,34 @@
  *  limitations under the License.
  */
 
-#include <drivers/mouse.h>
-#include <drivers/video.h>
-#include <graphics.h>
+#ifndef MOUSE_H
+#define MOUSE_H
 
-void paint_desktop() {
-    draw_rect(0, 0, 1024, 768, 0xCE2C2C);
-    
-    // TODO paint windows
-    paint_mouse();
-}
+#include <types.h>
 
-void paint_mouse() {
-    draw_rect(get_mouse_info()->x, get_mouse_info()->y, 5, 5, 0xFFFFFF);
-}
+#define MOUSE_PORT   0x60
+#define MOUSE_STATUS 0x64
+#define MOUSE_ABIT   0x02
+#define MOUSE_BBIT   0x01
+#define MOUSE_WRITE  0xD4
+#define MOUSE_F_BIT  0x20
+#define MOUSE_V_BIT  0x08
+
+#define LEFT_CLICK      0x1
+#define RIGHT_CLICK     0x2
+#define MIDDLE_CLICK    0x4
+
+typedef struct mouse_info {
+    uint8_t x;
+    uint8_t y;
+    uint32_t button;
+} mouse_info_t;
+
+void mouse_wait(uint8_t type);
+void mouse_write(uint8_t write);
+uint8_t mouse_read();
+mouse_info_t *get_mouse_info();
+void mouse_handler();
+void mouse_init();
+
+#endif

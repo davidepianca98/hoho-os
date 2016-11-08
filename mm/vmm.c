@@ -127,7 +127,6 @@ int vmm_map(page_dir_t *pdir, vmm_addr_t virt, uint32_t flags) {
     // Use the virtual address to get the index in the page directory and keep only the first 12 bits
     // which is the page table and use the virtual address to find the index in the page table
     ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | flags;
-    flush_tlb(virt);
     return 1;
 }
 
@@ -145,7 +144,6 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
     // Use the virtual address to get the index in the page directory and keep only the first 12 bits
     // which is the page table and use the virtual address to find the index in the page table
     ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | flags;
-    //flush_tlb(virt);
     return 1;
 }
 

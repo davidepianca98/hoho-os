@@ -17,6 +17,7 @@
 #include <drivers/video.h>
 #include <lib/string.h>
 #include <mm/memory.h>
+#include <graphics.h>
 
 static int x;
 static int y;
@@ -123,15 +124,12 @@ void vbe_init(multiboot_info_t *info) {
             vmm_map(get_kern_directory(), addr_buf, PAGE_PRESENT | PAGE_RW);
             vmm_map_phys(get_kern_directory(), addr, addr, PAGE_PRESENT | PAGE_RW);
         }
-        // TODO start process refresh_screen
-        draw_rect(100, 500, 84, 57, 0xCE2C2C);
-        draw_pixel(200, 100, 0xCE2C2C);
-        memcpy(vbemem.mem, vbemem.buffer, vbemem.buffer_size);
     }
 }
 
 void refresh_screen() {
-    while(1) {
+    for(;;) {
+        paint_desktop();
         memcpy(vbemem.mem, vbemem.buffer, vbemem.buffer_size);
     }
 }
@@ -142,6 +140,7 @@ void draw_pixel(int x, int y, uint32_t color) {
     x = x * (vbemem.bpp / 8);
     y = y * vbemem.pitch;
     
+    register uint8_t *pixel = (uint8_t *) ((uint32_t) vbemem.buffer) + x + y;
     pixel[0] = color & 0xFF;
     pixel[1] = (color >> 8) & 0xFF;
     pixel[2] = (color >> 16) & 0xFF;

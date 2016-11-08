@@ -114,17 +114,19 @@ void sched_init() {
     proc->pdir = get_kern_directory();
     main_thread->eip = (uint32_t) &main_proc;
     
-    vmm_map(proc->pdir, (vmm_addr_t) KERNEL_SPACE_END, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    vmm_map(proc->pdir, (vmm_addr_t) KERNEL_SPACE_END, PAGE_PRESENT | PAGE_RW);
 
-    main_thread->esp = (uint32_t) get_phys_addr(proc->pdir, KERNEL_SPACE_END);
+    main_thread->esp = (uint32_t) KERNEL_SPACE_END;
     main_thread->stack_limit = ((uint32_t) main_thread->esp + PAGE_SIZE);
     
     main_thread->esp_kernel = main_thread->stack_limit;
     main_thread->stack_kernel_limit = main_thread->esp_kernel + PAGE_SIZE;
     
-    vmm_map(proc->pdir, main_thread->esp_kernel, PAGE_PRESENT | PAGE_RW | PAGE_USER);
+    vmm_map(proc->pdir, main_thread->esp_kernel, PAGE_PRESENT | PAGE_RW);
     
-    uint32_t *stackp = (uint32_t *) main_thread->stack_limit;
+    uint32_t *stackp = (uint32_t *) main_thread->stack_kernel_limit;
+    *--stackp = 0x10;                     // ss
+    *--stackp = main_thread->esp;         // esp
     *--stackp = 0x202;                    // eflags
     *--stackp = 0x8;                      // cs
     *--stackp = main_thread->eip;         // eip
@@ -139,8 +141,6 @@ void sched_init() {
     *--stackp = 0x10;                     // es
     *--stackp = 0x10;                     // fs
     *--stackp = 0x10;                     // gs
-    main_thread->esp = (uint32_t) stackp;
-    
     main_thread->esp_kernel = (uint32_t) stackp;
     
     proc->next = proc;
@@ -152,7 +152,7 @@ void sched_init() {
     change_page_directory(proc->pdir);
     set_esp0(main_thread->stack_kernel_limit);
     
-    asm volatile("mov %%eax, %%esp" : : "a" (main_thread->esp));
+    asm volatile("mov %%eax, %%esp" : : "a" (main_thread->esp_kernel));
     asm volatile("pop %gs;          \
                   pop %fs;          \
                   pop %es;          \

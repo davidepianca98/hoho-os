@@ -266,6 +266,38 @@ void remove_proc(int pid) {
 }
 
 /**
+ * Creates a kernel process from a function
+ */
+int start_kernel_proc(char *name, void *addr) {
+    process_t *proc = (process_t *) kmalloc(sizeof(process_t));
+    strcpy(proc->name, name);
+    proc->state = PROC_NEW;
+    proc->pdir = get_kern_directory();
+    proc->thread_list = create_thread();
+    if(proc->thread_list == NULL)
+        return PROC_STOPPED;
+    proc->thread_list->main = 1;
+    proc->thread_list->parent = (void *) proc;
+    proc->thread_list->eip = (uint32_t) addr;
+    
+
+    proc->thread_list->stack_limit = ((uint32_t) proc->thread_list->esp + PAGE_SIZE);
+    
+    proc->thread_list->esp_kernel = proc->thread_list->stack_limit;
+    proc->thread_list->stack_kernel_limit = proc->thread_list->esp_kernel + PAGE_SIZE;
+    
+    
+    proc->thread_list->esp_kernel = (uint32_t) stackp;
+    
+    proc->threads = 1;
+    proc->thread_list->state = PROC_ACTIVE;
+    proc->state = PROC_ACTIVE;
+    
+    sched_add_proc(proc);
+    return proc->thread_list->pid;
+}
+
+/**
  * Returns given id process state
  */
 int proc_state(int id) {

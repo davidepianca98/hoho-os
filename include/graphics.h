@@ -14,17 +14,10 @@
  *  limitations under the License.
  */
 
-#include <drivers/mouse.h>
-#include <drivers/video.h>
-#include <graphics.h>
+#ifndef GRAPHICS_H
+#define GRAPHICS_H
 
-void paint_desktop() {
-    draw_rect(0, 0, 1024, 768, 0xCE2C2C);
-    
-    // TODO paint windows
-    paint_mouse();
-}
+void paint_desktop();
+void paint_mouse();
 
-void paint_mouse() {
-    draw_rect(get_mouse_info()->x, get_mouse_info()->y, 5, 5, 0xFFFFFF);
-}
+#endif

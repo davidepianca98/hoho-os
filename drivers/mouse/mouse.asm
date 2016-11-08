@@ -14,10 +14,10 @@
 ;  limitations under the License.
 ;
 
-extern keyboard_read_key
+extern mouse_handler
 
-global keyboard_int
-keyboard_int:
+global mouse_int
+mouse_int:
     pushad
     push gs
     push fs
@@ -30,7 +30,7 @@ keyboard_int:
     mov fs, ax
     mov gs, ax
 
-    call keyboard_read_key
+    call mouse_handler
     
     mov al, 0x20
     out 0x20, al

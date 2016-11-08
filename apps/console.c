@@ -34,6 +34,7 @@ char privilege = '$';
  */
 void console_init(char *usr) {
     printk("Console started\n");
+    start_kernel_proc("draw_thread", &refresh_screen);
     user = kmalloc(sizeof(strlen(usr) + 1));
     memset(user, 0, strlen(usr) + 1);
     strcpy(user, usr);

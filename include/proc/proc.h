@@ -84,6 +84,7 @@ int stack_fill(thread_t *thread, uint32_t argc, uint32_t argv);
 int build_heap(thread_t *thread, page_dir_t *pdir, int nthreads);
 void end_proc(int ret);
 void remove_proc(int pid);
+int start_kernel_proc(char *name, void *addr);
 int proc_state(int id);
 
 #endif
