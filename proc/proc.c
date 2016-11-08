@@ -280,13 +280,33 @@ int start_kernel_proc(char *name, void *addr) {
     proc->thread_list->parent = (void *) proc;
     proc->thread_list->eip = (uint32_t) addr;
     
+    vmm_map(proc->pdir, (vmm_addr_t) KERNEL_SPACE_END + 0x5000, PAGE_PRESENT | PAGE_RW);
 
+    proc->thread_list->esp = (uint32_t) KERNEL_SPACE_END + 0x5000;
     proc->thread_list->stack_limit = ((uint32_t) proc->thread_list->esp + PAGE_SIZE);
     
     proc->thread_list->esp_kernel = proc->thread_list->stack_limit;
     proc->thread_list->stack_kernel_limit = proc->thread_list->esp_kernel + PAGE_SIZE;
     
+    vmm_map(proc->pdir, proc->thread_list->esp_kernel, PAGE_PRESENT | PAGE_RW);
     
+    uint32_t *stackp = (uint32_t *) proc->thread_list->stack_kernel_limit;
+    *--stackp = 0x10;                     // ss
+    *--stackp = proc->thread_list->esp;   // esp
+    *--stackp = 0x202;                    // eflags
+    *--stackp = 0x8;                      // cs
+    *--stackp = proc->thread_list->eip;   // eip
+    *--stackp = 0;                        // eax
+    *--stackp = 0;                        // ebx
+    *--stackp = 0;                        // ecx
+    *--stackp = 0;                        // edx
+    *--stackp = 0;                        // esi
+    *--stackp = 0;                        // edi
+    *--stackp = proc->thread_list->stack_limit;// ebp
+    *--stackp = 0x10;                     // ds
+    *--stackp = 0x10;                     // es
+    *--stackp = 0x10;                     // fs
+    *--stackp = 0x10;                     // gs
     proc->thread_list->esp_kernel = (uint32_t) stackp;
     
     proc->threads = 1;
