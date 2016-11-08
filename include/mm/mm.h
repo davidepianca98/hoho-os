@@ -24,7 +24,7 @@
 #define BYTE_SET 0xFFFFFFFF
 #define BITMAP_LEN 0x8000
 
-#define KERNEL_SPACE_END 0x601000
+#define KERNEL_SPACE_END 0x401000
 
 typedef uint32_t mm_addr_t;
 

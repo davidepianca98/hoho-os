@@ -18,6 +18,7 @@
 #include <mm/memory.h>
 #include <lib/string.h>
 #include <drivers/video.h>
+#include <proc/proc.h>
 
 /*
  * |------------------------------------------------|
@@ -25,11 +26,9 @@
  * | kernel_end - 0x200000 -> kernel heap           |
  * | 0x200000 - 0x400000 -> paging structures       |
  * |------------------------------------------------|
- * | 0x400000 - 0x600000 -> video memory buffer     |
+ * | 0x400000 - 0x401000 -> common space            |
  * |------------------------------------------------|
- * | 0x600000 - 0x601000 -> common space            |
- * |------------------------------------------------|
- * | 0x601000 - 0x700000 -> free space              |
+ * | 0x401000 - 0x700000 -> free space              |
  * |------------------------------------------------|
  * | 0x700000 - 0x800000 -> elf loading space       |
  * |------------------------------------------------|
@@ -61,8 +60,8 @@ void map_kernel(page_dir_t *pdir) {
     vmm_addr_t virt = 0x00000000;
     mm_addr_t phys = 0x0;
     
-    // Identity map first 6MB
-    for(int i = 0; i < 1536; i++, virt += PAGE_SIZE, phys += PAGE_SIZE) {
+    // Identity map first 4MB
+    for(int i = 0; i < 1024; i++, virt += PAGE_SIZE, phys += PAGE_SIZE) {
         if(pdir[virt >> 22] == 0) {
             if(!vmm_create_page_table(pdir, virt, PAGE_PRESENT | PAGE_RW)) {
                 printk("Error creating page table");
@@ -72,11 +71,12 @@ void map_kernel(page_dir_t *pdir) {
         ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | PAGE_PRESENT | PAGE_RW;
     }
     // Space for RETURN_ADDR
-    if(!vmm_create_page_table(pdir, virt, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
+    uint32_t ret_addr = (uint32_t) RETURN_ADDR;
+    if(!vmm_create_page_table(pdir, ret_addr, PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
         printk("Error creating page table");
         return;
     }
-    ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | PAGE_PRESENT | PAGE_RW | PAGE_USER;
+    ((uint32_t *) (pdir[ret_addr >> 22] & ~0xFFF))[ret_addr << 10 >> 10 >> 12] = ret_addr | PAGE_PRESENT | PAGE_RW | PAGE_USER;
 }
 
 /**
@@ -145,7 +145,7 @@ int vmm_map_phys(page_dir_t *pdir, vmm_addr_t virt, mm_addr_t phys, uint32_t fla
     // Use the virtual address to get the index in the page directory and keep only the first 12 bits
     // which is the page table and use the virtual address to find the index in the page table
     ((uint32_t *) (pdir[virt >> 22] & ~0xFFF))[virt << 10 >> 10 >> 12] = phys | flags;
-    flush_tlb(virt);
+    //flush_tlb(virt);
     return 1;
 }
 

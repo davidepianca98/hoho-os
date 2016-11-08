@@ -16,6 +16,7 @@
 
 #include <drivers/video.h>
 #include <lib/string.h>
+#include <mm/memory.h>
 
 static int x;
 static int y;
@@ -100,20 +101,33 @@ void clear() {
 }
 
 void vbe_init(multiboot_info_t *info) {
+    vbe_controller_info_t *vbe_contr = (vbe_controller_info_t *) info->vbe_control_info;
     vbe_mode_info_t *vbe_mode = (vbe_mode_info_t *) info->vbe_mode_info;
     
     vbemem.buffer_size = vbe_mode->width * vbe_mode->height * (vbe_mode->bpp / 8);
-    vbemem.mem = (void *) vbe_mode->framebuffer;
-    vbemem.buffer = (void *) VIDEO_MEM_BUFFER;
+    vbemem.mem = (uint32_t *) vbe_mode->framebuffer;
     vbemem.xres = vbe_mode->width;
     vbemem.yres = vbe_mode->height;
     vbemem.bpp = vbe_mode->bpp;
     vbemem.pitch = vbe_mode->pitch;
     
-    // TODO start process refresh_screen
-    //put_rect(100, 100, 100, 100, 4);
-    //put_pixel(800, 100, 4);
-    //memcpy(vbemem.mem, vbemem.buffer, vbemem.buffer_size);
+    if(!vbe_mode->framebuffer || vbe_contr->version < 0x0200 || !(vbe_mode->attributes & 0x8)) {
+        regs16_t regs;
+        regs.ax = 0x3;
+        int32(0x10, &regs);
+    } else {
+        uint32_t addr = (uint32_t) vbe_mode->framebuffer;
+        uint32_t addr_buf = addr + vbemem.buffer_size;
+        vbemem.buffer = (uint32_t *) addr_buf;
+        for(int i = 0; i < (int) vbemem.buffer_size / PAGE_SIZE; i++, addr += PAGE_SIZE, addr_buf += PAGE_SIZE) {
+            vmm_map(get_kern_directory(), addr_buf, PAGE_PRESENT | PAGE_RW);
+            vmm_map_phys(get_kern_directory(), addr, addr, PAGE_PRESENT | PAGE_RW);
+        }
+        // TODO start process refresh_screen
+        draw_rect(100, 500, 84, 57, 0xCE2C2C);
+        draw_pixel(200, 100, 0xCE2C2C);
+        memcpy(vbemem.mem, vbemem.buffer, vbemem.buffer_size);
+    }
 }
 
 void refresh_screen() {
@@ -122,23 +136,21 @@ void refresh_screen() {
     }
 }
 
-void put_pixel(int x, int y, int color) {
+void draw_pixel(int x, int y, uint32_t color) {
     if(x < 0 || x > vbemem.xres || y < 0 || y > vbemem.yres)
         return;
     x = x * (vbemem.bpp / 8);
     y = y * vbemem.pitch;
     
-    register char *c_temp;
-    c_temp = (char *) ((int) vbemem.buffer) + x + y;
-    c_temp[0] = color & 0xFF;
-    c_temp[1] = (color >> 8) & 0xFF;
-    c_temp[2] = (color >> 16) & 0xFF;
+    pixel[0] = color & 0xFF;
+    pixel[1] = (color >> 8) & 0xFF;
+    pixel[2] = (color >> 16) & 0xFF;
 }
 
-void put_rect(int x, int y, int w, int h, int color) {
+void draw_rect(int x, int y, int w, int h, uint32_t color) {
     for(int i = 0; i < w; i++) {
         for(int j = 0; j < h; j++) {
-            put_pixel(x, y, color);
+            draw_pixel(x + i, y + j, color);
         }
     }
 }

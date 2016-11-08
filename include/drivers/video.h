@@ -14,8 +14,8 @@ void scroll();
 void clear();
 void vbe_init(multiboot_info_t *info);
 void refresh_screen();
-void put_pixel(int x, int y, int color);
-void put_rect(int x, int y, int w, int h, int color);
+void draw_pixel(int x, int y, uint32_t color);
+void draw_rect(int x, int y, int w, int h, uint32_t color);
 
 struct video_mem {
     int heigth;
@@ -23,12 +23,10 @@ struct video_mem {
     uint16_t *ram;
 };
 
-#define VIDEO_MEM_BUFFER 0x400000
-
 struct vbe_mem {
     uint32_t buffer_size;
-    void *mem;
-    void *buffer;
+    uint32_t *mem;
+    uint32_t *buffer;
     uint16_t xres;
     uint16_t yres;
     uint8_t bpp;

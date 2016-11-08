@@ -28,11 +28,12 @@ int kmain(multiboot_info_t *info) {
     
     video_init(25, 80);
     clear();
-    vbe_init(info);
     
     pmm_init(info->mem_high + info->mem_low, (uint32_t *) info->mmap_addr, info->mmap_len);
     vmm_init();
     kheap_init();
+    
+    vbe_init(info);
     
     hal_init();
     
