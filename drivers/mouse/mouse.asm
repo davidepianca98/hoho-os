@@ -33,6 +33,7 @@ mouse_int:
     call mouse_handler
     
     mov al, 0x20
+    out 0xA0, al
     out 0x20, al
     
     pop ds

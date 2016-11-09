@@ -10,6 +10,7 @@ all:
 	cd bootloader; make
 	cd drivers; make
 	cd fs; make
+	cd gui; make
 	cd lib; make
 	cd hal; make
 	cd mm; make
@@ -26,6 +27,7 @@ all:
 	drivers/*.o \
 	drivers/*/*.o \
 	fs/*.o \
+	gui/*.o \
 	lib/*.o \
 	hal/*.o \
 	mm/*.o \

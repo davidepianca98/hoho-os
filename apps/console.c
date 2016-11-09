@@ -20,6 +20,7 @@
 #include <drivers/keyboard.h>
 #include <lib/string.h>
 #include <fs/vfs.h>
+#include <gui/window.h>
 #include <drivers/video.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
@@ -29,12 +30,16 @@ char *dir;
 
 char privilege = '$';
 
+window_t *window;
+
 /**
  * Sets up the console
  */
 void console_init(char *usr) {
     printk("Console started\n");
-    start_kernel_proc("draw_thread", &refresh_screen);
+    
+    window = window_create("Console", 50, 50, 700, 500);
+    
     user = kmalloc(sizeof(strlen(usr) + 1));
     memset(user, 0, strlen(usr) + 1);
     strcpy(user, usr);
@@ -59,7 +64,7 @@ void console_run() {
         keyboard_invalidate_lastkey();
         if(character_check(c)) {
             buffer[buffer_counter++] = c;
-        } else if(c == '\b') { // backspace
+        } else if(c == '\b') { // Backspace
             if(buffer_counter > 0) {
                 buffer_counter--;
             } else {
@@ -67,7 +72,7 @@ void console_run() {
             }
         }
         printk("%c", c);
-        if(c == '\n') { // enter pressed
+        if(c == '\n') { // Enter pressed
             buffer[buffer_counter] = '\0';
             console_exec(buffer);
             buffer_counter = 0;

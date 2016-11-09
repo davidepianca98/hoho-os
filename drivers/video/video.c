@@ -113,9 +113,11 @@ void vbe_init(multiboot_info_t *info) {
     vbemem.pitch = vbe_mode->pitch;
     
     if(!vbe_mode->framebuffer || vbe_contr->version < 0x0200 || !(vbe_mode->attributes & 0x8)) {
-        regs16_t regs;
-        regs.ax = 0x3;
-        int32(0x10, &regs);
+        if(vbe_mode->width != 80 && vbe_mode->height != 25) {
+            regs16_t regs;
+            regs.ax = 0x3;
+            int32(0x10, &regs);
+        }
     } else {
         uint32_t addr = (uint32_t) vbe_mode->framebuffer;
         uint32_t addr_buf = addr + vbemem.buffer_size;
@@ -124,6 +126,7 @@ void vbe_init(multiboot_info_t *info) {
             vmm_map(get_kern_directory(), addr_buf, PAGE_PRESENT | PAGE_RW);
             vmm_map_phys(get_kern_directory(), addr, addr, PAGE_PRESENT | PAGE_RW);
         }
+        windows_list_init();
     }
 }
 

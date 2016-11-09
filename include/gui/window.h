@@ -14,34 +14,28 @@
  *  limitations under the License.
  */
 
-#ifndef MOUSE_H
-#define MOUSE_H
+#ifndef WINDOW_H
+#define WINDOW_H
 
-#include <types.h>
+#define WINDOW_EDGE_COLOR               0xA3A29E
+#define WINDOW_BACKGROUND_COLOR         0xE8E6E3
 
-#define MOUSE_PORT   0x60
-#define MOUSE_STATUS 0x64
-#define MOUSE_ABIT   0x02
-#define MOUSE_BBIT   0x01
-#define MOUSE_WRITE  0xD4
-#define MOUSE_F_BIT  0x20
-#define MOUSE_V_BIT  0x08
+typedef struct window {
+    char title[256];
+    int x;
+    int y;
+    int h;
+    int w;
+} window_t;
 
-#define LEFT_CLICK      0x1
-#define RIGHT_CLICK     0x2
-#define MIDDLE_CLICK    0x4
+typedef struct wlist {
+    window_t *window;
+    struct wlist *next;
+} window_list_t;
 
-typedef struct mouse_info {
-    uint32_t x;
-    uint32_t y;
-    uint32_t button;
-} mouse_info_t;
-
-void mouse_wait(uint8_t type);
-void mouse_write(uint8_t write);
-uint8_t mouse_read();
-mouse_info_t *get_mouse_info();
-void mouse_handler();
-void mouse_init();
+void windows_list_init();
+window_t *window_create(char *title, int x, int y, int w, int h);
+void paint_windows();
+void paint_window(window_t *window);
 
 #endif

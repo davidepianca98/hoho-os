@@ -21,6 +21,7 @@
 #include <mm/memory.h>
 #include <multiboot.h>
 #include <fs/vfs.h>
+#include <drivers/mouse.h>
 #include <drivers/video.h>
 #include <proc/sched.h>
 

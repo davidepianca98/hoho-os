@@ -46,6 +46,7 @@ process_t *get_proc_by_id(int id) {
 }
 
 void main_proc() {
+    start_kernel_proc("draw_thread", &refresh_screen);
     console_init("Hoho");
 }
 

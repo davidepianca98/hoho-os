@@ -19,7 +19,7 @@
 #include <hal/hal.h>
 
 uint8_t mouse_cycle = 0;
-uint8_t mouse_byte[3];
+char mouse_byte[3];
 
 extern void mouse_int();
 
@@ -45,7 +45,7 @@ uint8_t mouse_read() {
     return inportb(MOUSE_PORT);
 }
 
-mouse_info_t info;
+static mouse_info_t info;
 
 mouse_info_t *get_mouse_info() {
     return &info;
@@ -54,13 +54,13 @@ mouse_info_t *get_mouse_info() {
 void mouse_handler() {
     uint8_t status = inportb(MOUSE_STATUS);
     while(status & MOUSE_BBIT) {
-        uint8_t mouse_in = inportb(MOUSE_PORT);
+        char mouse_in = inportb(MOUSE_PORT);
         if(status & MOUSE_F_BIT) {
             switch(mouse_cycle) {
                 case 0:
                     mouse_byte[0] = mouse_in;
                     if(!(mouse_in & MOUSE_V_BIT))
-                        return;
+                        goto read_next;
                     mouse_cycle++;
                     break;
                 case 1:
@@ -70,9 +70,9 @@ void mouse_handler() {
                 case 2:
                     mouse_byte[2] = mouse_in;
                     if(mouse_byte[0] & 0x80 || mouse_byte[0] & 0x40)
-                        break;
-                    info.x = mouse_byte[1];
-                    info.y = mouse_byte[2];
+                        goto read_next;
+                    info.x += mouse_byte[1];
+                    info.y -= mouse_byte[2];
                     if(mouse_byte[0] & LEFT_CLICK)
                         info.button = LEFT_CLICK;
                     else if(mouse_byte[0] & RIGHT_CLICK)
@@ -83,18 +83,21 @@ void mouse_handler() {
                     break;
             }
         }
+read_next:
         status = inportb(MOUSE_STATUS);
     }
 }
 
 void mouse_init() {
+    info.x = 0;
+    info.y = 0;
     uint8_t status;
     disable_int();
     mouse_wait(1);
     outportb(MOUSE_STATUS, 0xA8);
     mouse_wait(1);
     outportb(MOUSE_STATUS, 0x20);
-    mouse_wait(0);
+    mouse_wait(2);
     status = inportb(0x60) | 2;
     mouse_wait(1);
     outportb(MOUSE_STATUS, 0x60);
@@ -104,6 +107,6 @@ void mouse_init() {
     mouse_read();
     mouse_write(0xF4);
     mouse_read();
+    install_ir(44, 0x80 | 0x0E, 0x8, &mouse_int);
     enable_int();
-    install_ir(12, 0x80 | 0x0E, 0x8, &mouse_int);
 }
