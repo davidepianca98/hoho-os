@@ -34,6 +34,7 @@ void draw_pixel(int x, int y, uint32_t color);
 void draw_rect(int x, int y, int w, int h, uint32_t color);
 void draw_string(int x, int y, char *string);
 void draw_char(int x, int y, char *font_char);
+int is_text_mode();
 
 struct video_mem {
     int heigth;

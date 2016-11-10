@@ -27,11 +27,14 @@
 
 char *user;
 
+window_t *window;
+
 /**
  * Sets up the console
  */
-void console_init(char *usr) {
-    printk("Console started\n");
+void console_init_gui(char *usr) {
+    window = window_create("Console", 50, 50, 700, 500);
+    
     user = kmalloc(sizeof(strlen(usr) + 1));
     memset(user, 0, strlen(usr) + 1);
     strcpy(user, usr);
@@ -42,10 +45,10 @@ void console_init(char *usr) {
 /**
  * Console loop
  */
-void console_run() {
+void console_run_gui() {
     char *buffer = kmalloc(64);
     char c = 0;
-    printk("%s $  ", user);
+    //printk("%s  $ ", user);
     int buffer_counter = 0;
     while(1) {
         c = keyboard_get_lastkey();
@@ -61,12 +64,12 @@ void console_run() {
                 continue;
             }
         }
-        printk("%c", c);
+        //printk("%c", c);
         if(c == '\n') { // Enter pressed
             buffer[buffer_counter] = '\0';
             console_exec(buffer);
             buffer_counter = 0;
-            printk("%s %s $ ", user, get_dir());
+            //printk("%s %s $ ", user, get_dir());
         }
     }
     kfree(buffer);

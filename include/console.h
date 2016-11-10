@@ -20,11 +20,13 @@
 #include <fs/vfs.h>
 
 void console_init(char *usr);
+void console_init_gui(char *usr);
 void console_run();
-void console_exec(char *buf);
-int character_check(char c);
-char *get_dir();
+void console_run_gui();
 
+char *get_dir();
+int character_check(char c);
+void console_exec(char *buf);
 void console_cd(char *dir, char *command);
 void console_start(char *dir, char *command);
 void console_read(char *dir, char *command);

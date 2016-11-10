@@ -46,8 +46,12 @@ process_t *get_proc_by_id(int id) {
 }
 
 void main_proc() {
-    start_kernel_proc("draw_thread", &refresh_screen);
-    console_init("Hoho");
+    if(is_text_mode()) {
+        console_init("Hoho");
+    } else {
+        start_kernel_proc("draw_thread", &refresh_screen);
+        console_init_gui("Hoho");
+    }
 }
 
 uint32_t schedule(uint32_t esp) {

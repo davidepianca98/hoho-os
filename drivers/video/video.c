@@ -208,3 +208,11 @@ void draw_char(int x, int y, char *font_char) {
         }
     }
 }
+
+int is_text_mode() {
+    if(vbemem.mem != 0) {
+        return 0;
+    } else {
+        return 1;
+    }
+}

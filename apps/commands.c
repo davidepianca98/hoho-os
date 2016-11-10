@@ -15,17 +15,84 @@
  */
 
 #include <console.h>
+#include <drivers/io.h>
 #include <drivers/keyboard.h>
 #include <drivers/video.h>
 #include <fs/vfs.h>
+#include <hal/hal.h>
 #include <lib/string.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
 
 char senddir[64];
+char dir[64];
 
 extern uint32_t kernel_start;
 extern uint32_t kernel_end;
+
+/**
+ * Gets the current working directory
+ */
+char *get_dir() {
+    return dir;
+}
+
+/**
+ * Checks if the character is printable
+ */
+int character_check(char c) {
+    if(((int) c >= 32) && ((int) c <= 122)) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+/**
+ * Executes the issued command
+ */
+void console_exec(char *buf) {
+    if(strncmp(buf, "cd", 2) == 0) {
+        console_cd(dir, buf);
+    } else if(strncmp(buf, "start", 5) == 0) {
+        console_start(dir, buf);
+    } else if(strncmp(buf, "read", 4) == 0) {
+        console_read(dir, buf);
+    } else if(strncmp(buf, "write", 5) == 0) {
+        console_write(dir, buf);
+    } else if(strncmp(buf, "touch", 5) == 0) {
+        console_touch(dir, buf);
+    } else if(strncmp(buf, "delete", 6) == 0) {
+        console_delete(dir, buf);
+    } else if(strcmp(buf, "hoho") == 0) {
+        printk("hoho\n");
+    } else if(strcmp(buf, "help") == 0) {
+        printk("Help:\nhoho - prints hoho\nhelp - shows help\nmeminfo - prints RAM info\ncpuinfo - shows CPU info\nls - shows filesystem devices\nread - reads a file\nstart - starts a program\nclear - clears the screen\nhalt - shuts down\nreboot - reboots the pc\n");
+    } else if(strcmp(buf, "meminfo") == 0) {
+        print_meminfo();
+    } else if(strcmp(buf, "cpuinfo") == 0) {
+        printk("%s\n", get_cpu_vendor(0));
+    } else if(strcmp(buf, "ls") == 0) {
+        if(dir[0] == 0) {
+            vfs_ls();
+        } else {
+            vfs_ls_dir(dir);
+        }
+    } else if(strcmp(buf, "clear") == 0) {
+        clear();
+    } else if(strcmp(buf, "proc") == 0) {
+        print_procs();
+    } else if(strcmp(buf, "halt") == 0) {
+        printk("Shutting down\n");
+        halt();
+        while(1);
+    } else if(strcmp(buf, "reboot") == 0) {
+        printk("Rebooting\n");
+        reboot();
+    } else {
+        printk("Command not found\n");
+    }
+}
 
 /**
  * Change directory
