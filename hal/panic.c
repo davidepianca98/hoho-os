@@ -23,6 +23,7 @@ void panic() {
     disable_int();
     beep(1);
     printk("\nPANIC");
+    draw_rect(400, 300, 200, 200, 0x000000);
     while(1);
 }
 

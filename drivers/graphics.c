@@ -17,6 +17,7 @@
 #include <drivers/mouse.h>
 #include <drivers/video.h>
 #include <graphics.h>
+#include <gui/window.h>
 
 void paint_desktop() {
     draw_rect(0, 0, 1024, 768, 0xCE2C2C);

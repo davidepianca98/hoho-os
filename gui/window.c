@@ -15,8 +15,8 @@
  */
 
 #include <drivers/video.h>
-#include <gui/window.h>
 #include <graphics.h>
+#include <gui/window.h>
 #include <lib/string.h>
 #include <mm/kheap.h>
 
@@ -59,4 +59,5 @@ void paint_windows() {
 void paint_window(window_t *window) {
     draw_rect(window->x, window->y, window->w, window->h, WINDOW_EDGE_COLOR);
     draw_rect(window->x + 10, window->y + 20, window->w - 20, window->h - 35, WINDOW_BACKGROUND_COLOR);
+    draw_string(window->x + 5, window->y + 5, window->title);
 }

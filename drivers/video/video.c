@@ -18,6 +18,8 @@
 #include <lib/string.h>
 #include <mm/memory.h>
 #include <graphics.h>
+#include <gui/window.h>
+#include <gui/font.h>
 
 static int x;
 static int y;
@@ -167,5 +169,42 @@ void draw_rect(int x, int y, int w, int h, uint32_t color) {
             where[j * 4 + 2] = b;
         }
         where += row;
+    }
+}
+
+void draw_string(int x, int y, char *string) {
+    while(*string) {
+        switch(*string) {
+            case '\0':
+                return;
+            case '\b':
+                // TODO
+                break;
+            case '\n':
+                y++;
+                x = 0;
+                check();
+                break;
+            case '\r':
+                // TODO
+                break;
+            default:
+                draw_char(x, y, fonts[(int) *string]);
+                x += 9;
+                break;
+        }
+        string++;
+    }
+}
+
+void draw_char(int x, int y, char *font_char) {
+    for(int i = 0; i < 8; i++) {
+        int l = 0;
+        for(int j = 7; j >= 0; j--) {
+            if(font_char[i] & (1 << j)) {
+                draw_pixel(x + l, y + i, 0x000000);
+            }
+            l++;
+        }
     }
 }

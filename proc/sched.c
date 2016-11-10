@@ -106,6 +106,7 @@ void sched_init() {
     thread_t *main_thread = (thread_t *) kmalloc(sizeof(thread_t));
     proc->thread_list = main_thread;
     proc->threads = 1;
+    main_thread->time = 10;
     main_thread->next = main_thread;
     main_thread->prec = main_thread;
     main_thread->pid = 1;
