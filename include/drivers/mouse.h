@@ -32,8 +32,8 @@
 #define MIDDLE_CLICK    0x4
 
 typedef struct mouse_info {
-    uint32_t x;
-    uint32_t y;
+    int x;
+    int y;
     uint32_t button;
 } mouse_info_t;
 
@@ -42,6 +42,7 @@ void mouse_write(uint8_t write);
 uint8_t mouse_read();
 mouse_info_t *get_mouse_info();
 void mouse_handler();
+void mouse_check_bounds();
 void mouse_init();
 
 #endif

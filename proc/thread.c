@@ -33,7 +33,7 @@ thread_t *create_thread() {
         return NULL;
     thread->pid = pid++;
     thread->main = 0;
-    thread->time = 20;
+    thread->time = 10;
     thread->state = PROC_NEW;
     thread->next = thread;
     thread->prec = thread;

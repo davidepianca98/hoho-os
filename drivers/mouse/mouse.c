@@ -73,6 +73,8 @@ void mouse_handler() {
                         goto read_next;
                     info.x += mouse_byte[1];
                     info.y -= mouse_byte[2];
+                    mouse_check_bounds();
+                    
                     if(mouse_byte[0] & LEFT_CLICK)
                         info.button = LEFT_CLICK;
                     else if(mouse_byte[0] & RIGHT_CLICK)
@@ -86,6 +88,17 @@ void mouse_handler() {
 read_next:
         status = inportb(MOUSE_STATUS);
     }
+}
+
+void mouse_check_bounds() {
+    if(info.x > 1024)
+        info.x = 1024;
+    else if(info.x < 0)
+        info.x = 0;
+    if(info.y > 768)
+        info.y = 768;
+    else if(info.y < 0)
+        info.y = 0;
 }
 
 void mouse_init() {
