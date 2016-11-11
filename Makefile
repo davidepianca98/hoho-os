@@ -43,7 +43,7 @@ run:
 	VBoxManage startvm Hoho
 
 qemu:
-	qemu-system-i386 -vga std -hda hdd.img -fda floppy.img -cdrom hoho.iso
+	qemu-system-i386 -vga std -cdrom hoho.iso -hda hdd.img -fda floppy.img
 
 qemu-debug:
 	qemu-system-i386 -d in_asm -hda hdd.img -fda floppy.img -kernel kernel.bin

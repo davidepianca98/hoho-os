@@ -28,18 +28,33 @@
 char *user;
 
 window_t *window;
+text_area_t *text_area;
 
 /**
  * Sets up the console
  */
 void console_init_gui(char *usr) {
     window = window_create("Console", 50, 50, 700, 500);
+    text_area = create_text_area(10, 10, 660, 440);
+    add_component(window, text_area);
+    text_area_set_text(text_area, "Console started\n");
     
     user = kmalloc(sizeof(strlen(usr) + 1));
     memset(user, 0, strlen(usr) + 1);
     strcpy(user, usr);
-    console_run();
+    console_run_gui();
     kfree(user);
+}
+
+char str[256];
+
+char *to_string(char *buffer, ...) {
+    va_list args;
+    memset(str, 0, 256);
+    va_start(args, buffer);
+    vsprintf(str, buffer, args);
+    va_end(args);
+    return str;
 }
 
 /**
@@ -48,7 +63,8 @@ void console_init_gui(char *usr) {
 void console_run_gui() {
     char *buffer = kmalloc(64);
     char c = 0;
-    //printk("%s  $ ", user);
+    
+    text_area_append(text_area, to_string("%s  $ ", user));
     int buffer_counter = 0;
     while(1) {
         c = keyboard_get_lastkey();
@@ -64,12 +80,14 @@ void console_run_gui() {
                 continue;
             }
         }
-        //printk("%c", c);
+        str[0] = c;
+        str[1] = 0;
+        text_area_append(text_area, str);
         if(c == '\n') { // Enter pressed
             buffer[buffer_counter] = '\0';
             console_exec(buffer);
             buffer_counter = 0;
-            //printk("%s %s $ ", user, get_dir());
+            text_area_append(text_area, to_string("%s %s $ ", user, get_dir()));
         }
     }
     kfree(buffer);

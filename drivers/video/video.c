@@ -173,6 +173,7 @@ void draw_rect(int x, int y, int w, int h, uint32_t color) {
 }
 
 void draw_string(int x, int y, char *string) {
+    int startx = x;
     while(*string) {
         switch(*string) {
             case '\0':
@@ -180,13 +181,15 @@ void draw_string(int x, int y, char *string) {
             case '\b':
                 // TODO
                 break;
-            case '\n':
-                y++;
-                x = 0;
-                check();
-                break;
             case '\r':
                 // TODO
+                break;
+            case '\n':
+                y += 9;
+                x = startx;
+                break;
+            case ' ':
+                x += 9;
                 break;
             default:
                 draw_char(x, y, fonts[(int) *string]);
