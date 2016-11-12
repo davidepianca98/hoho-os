@@ -158,7 +158,7 @@ int vsprintf(char *str, char *format, va_list args) {
                 i++;
                 switch(format[i]) {
                     case 'c':
-                        str[j] = va_arg(args, char);
+                        str[j] = (char) va_arg(args, int);
                         j++;
                         break;
                     case 'd':
@@ -172,7 +172,7 @@ int vsprintf(char *str, char *format, va_list args) {
                     case 'f': //TODO
                         break;
                     case 's':
-                        in_string = va_arg(args, char *);
+                        in_string = (char *) va_arg(args, char *);
                         for(int k = 0; k < strlen(in_string); k++) {
                             str[j] = in_string[k];
                             j++;
