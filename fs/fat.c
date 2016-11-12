@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <console.h>
 #include <hal/hal.h>
 #include <fs/fat.h>
 #include <fs/fat_mount.h>
@@ -68,11 +69,6 @@ void fat_mount(device_t *dev) {
         dev->minfo.type = FAT32;
     else
         dev->minfo.type = EXFAT;
-    
-    //printk("FAT type: %d\n", dev->minfo.type);
-    //printk("%x %x %x\n", bs->ignore[0], bs->ignore[1], bs->ignore[2]);
-    //printk("sect bytes: %d clus sect: %d res sect: %d n fats: %d\n n dir entr: %d n sect: %d media: %d fat sect: %d\n", bs->bpb.sector_bytes, bs->bpb.cluster_sectors, bs->bpb.reserved_sectors, bs->bpb.n_fats, bs->bpb.n_dir_entries, bs->bpb.n_sectors, bs->bpb.media, bs->bpb.fat_sectors);
-    //printk("n secs:%d fat offs:%d fat size:%d fat en size:%d\nn root en:%d root offs:%d root size:%d first data: %d data secs: %d\n", dev->minfo.n_sectors, dev->minfo.fat_offset, dev->minfo.fat_size, dev->minfo.fat_entry_size, dev->minfo.n_root_entries, dev->minfo.root_offset, dev->minfo.root_size, dev->minfo.first_data_sector, dev->minfo.data_sectors);
 }
 
 void to_dos_file_name(char *name, char *str) {
@@ -365,10 +361,10 @@ void fat_ls(char *dir) {
             if(((char *) direc->filename)[0] == 0)
                 continue;
             to_normal_file_name((char *) direc->filename, normal_name);
-            printk("%s  ", normal_name);
+            console_print("%s  ", normal_name);
         }
     }
-    printk("\n");
+    console_print("\n");
     kfree(normal_name);
 }
 

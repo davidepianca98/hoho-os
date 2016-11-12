@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <console.h>
 #include <proc/proc.h>
 #include <mm/memory.h>
 #include <fs/vfs.h>
@@ -31,27 +32,27 @@ int elf_validate(elf_header_t *eh) {
         return 0;
     
     if(!((eh->magic[0] == 0x7F) && (eh->magic[1] == 'E') && (eh->magic[2] == 'L') && (eh->magic[3] == 'F'))) {
-        printk("Magic number wrong\n");
+        console_print("Magic number wrong\n");
         return 0;
     }
     
     if(eh->instruction_set != ELF_X86) {
-        printk("Not an x86 executable\n");
+        console_print("Not an x86 executable\n");
         return 0;
     }
     
     if(eh->arch != ELF_32BIT) {
-        printk("Not a 32 bit executable\n");
+        console_print("Not a 32 bit executable\n");
         return 0;
     }
     
     if(eh->machine != ELF_LITTLE_ENDIAN) {
-        printk("Not a little endian executable\n");
+        console_print("Not a little endian executable\n");
         return 0;
     }
     
     if(eh->elf_version2 != 1) {
-        printk("Wrong ELF version\n");
+        console_print("Wrong ELF version\n");
         return 0;
     }
     return 1;
@@ -64,20 +65,20 @@ int load_elf(char *name, thread_t *thread, page_dir_t *pdir) {
     // Load the file into memory
     uint32_t file_size = load_elf_file(name);
     if(!file_size) {
-        printk("Error loading file\n");
+        console_print("Error loading file\n");
         return 0;
     }
     
     // Check the elf header
     elf_header_t *eh = (elf_header_t *) MEMORY_LOAD_ADDRESS;
     if(!elf_validate(eh)) {
-        printk("Failed validating elf\n");
+        console_print("Failed validating elf\n");
         return 0;
     }
     
     // Relocate executable parts
     if(!load_elf_relocate(thread, pdir, eh)) {
-        printk("Error relocating\n");
+        console_print("Error relocating\n");
         return 0;
     }
     
@@ -96,7 +97,7 @@ int load_elf_file(char *name) {
     // Open the executable
     file *f = vfs_file_open(name, "r");
     if((f->type == FS_NULL) || (f->type == FS_DIR)) {
-        printk("Failed opening file\n");
+        console_print("Failed opening file\n");
         return 0;
     }
     
@@ -107,7 +108,7 @@ int load_elf_file(char *name) {
         // The executable needs more memory, so reserve it
         if(((j + 8) % 8) == 0) {
             if(!vmm_map(get_kern_directory(), (uint32_t) MEMORY_LOAD_ADDRESS + (j * 512), PAGE_PRESENT | PAGE_RW)) {
-                printk("Error mapping memory");
+                console_print("Error mapping memory");
                 return -1;
             }
             file_size++;
@@ -144,7 +145,7 @@ int load_elf_relocate(thread_t *thread, page_dir_t *pdir, elf_header_t *eh) {
                 // Map executable in kernel and proc page directory
                 if(!vmm_map(get_kern_directory(), ph[i].p_vaddr + (j * PAGE_SIZE), PAGE_PRESENT | PAGE_RW) ||
                    !vmm_map_phys(pdir, ph[i].p_vaddr + (j * PAGE_SIZE), (uint32_t) get_phys_addr(get_kern_directory(), ph[i].p_vaddr), PAGE_PRESENT | PAGE_RW | PAGE_USER)) {
-                    printk("Error mapping memory");
+                    console_print("Error mapping memory");
                     return 0;
                 }
             }

@@ -23,9 +23,11 @@ void console_init(char *usr);
 void console_init_gui(char *usr);
 void console_run();
 void console_run_gui();
+void console_gui_print(char *str);
 
 char *get_dir();
 int character_check(char c);
+void console_print(char *buffer, ...);
 void console_exec(char *buf);
 void console_cd(char *dir, char *command);
 void console_start(char *dir, char *command);

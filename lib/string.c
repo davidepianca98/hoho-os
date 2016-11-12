@@ -148,10 +148,11 @@ char tolower(char c) {
 }
 
 int vsprintf(char *str, char *format, va_list args) {
-    int i, j = 0, k;
-    char *buf;
+    int j = 0;
+    char buf[256];
+    char *in_string;
     
-    for(i = 0; i < strlen(format); i++) {
+    for(int i = 0; i < strlen(format); i++) {
         switch(format[i]) {
             case '%':
                 i++;
@@ -163,7 +164,7 @@ int vsprintf(char *str, char *format, va_list args) {
                     case 'd':
                     case 'i':
                         itoa(va_arg(args, int), buf, 10);
-                        for(k = 0; k < strlen(buf); k++) {
+                        for(int k = 0; k < strlen(buf); k++) {
                             str[j] = buf[k];
                             j++;
                         }
@@ -171,22 +172,22 @@ int vsprintf(char *str, char *format, va_list args) {
                     case 'f': //TODO
                         break;
                     case 's':
-                        buf = va_arg(args, char *);
-                        for(k = 0; k < strlen(buf); k++) {
-                            str[j] = buf[k];
+                        in_string = va_arg(args, char *);
+                        for(int k = 0; k < strlen(in_string); k++) {
+                            str[j] = in_string[k];
                             j++;
                         }
                         break;
                     case 'x':
                         itoa(va_arg(args, int), buf, 16);
-                        for(k = 0; k < strlen(buf); k++) {
+                        for(int k = 0; k < strlen(buf); k++) {
                             str[j] = buf[k];
                             j++;
                         }
                         break;
                     case 'b':
                         itoa(va_arg(args, int), buf, 2);
-                        for(k = 0; k < strlen(buf); k++) {
+                        for(int k = 0; k < strlen(buf); k++) {
                             str[j] = buf[k];
                             j++;
                         }

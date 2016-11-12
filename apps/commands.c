@@ -49,6 +49,24 @@ int character_check(char c) {
 }
 
 /**
+ * Prints either to text or to gui console
+ */
+void console_print(char *buffer, ...) {
+    char str[256];
+    va_list args;
+    
+    va_start(args, buffer);
+    vsprintf(str, buffer, args);
+    va_end(args);
+    
+    if(is_text_mode()) {
+        printk_string(str);
+    } else {
+        console_gui_print(str);
+    }
+}
+
+/**
  * Executes the issued command
  */
 void console_exec(char *buf) {
@@ -65,13 +83,13 @@ void console_exec(char *buf) {
     } else if(strncmp(buf, "delete", 6) == 0) {
         console_delete(dir, buf);
     } else if(strcmp(buf, "hoho") == 0) {
-        printk("hoho\n");
+        console_print("hoho\n");
     } else if(strcmp(buf, "help") == 0) {
-        printk("Help:\nhoho - prints hoho\nhelp - shows help\nmeminfo - prints RAM info\ncpuinfo - shows CPU info\nls - shows filesystem devices\nread - reads a file\nstart - starts a program\nclear - clears the screen\nhalt - shuts down\nreboot - reboots the pc\n");
+        console_print("Help:\nhoho - prints hoho\nhelp - shows help\nmeminfo - prints RAM info\ncpuinfo - shows CPU info\nls - shows filesystem devices\nread - reads a file\nstart - starts a program\nclear - clears the screen\nhalt - shuts down\nreboot - reboots the pc\n");
     } else if(strcmp(buf, "meminfo") == 0) {
         print_meminfo();
     } else if(strcmp(buf, "cpuinfo") == 0) {
-        printk("%s\n", get_cpu_vendor(0));
+        console_print("%s\n", get_cpu_vendor(0));
     } else if(strcmp(buf, "ls") == 0) {
         if(dir[0] == 0) {
             vfs_ls();
@@ -83,14 +101,14 @@ void console_exec(char *buf) {
     } else if(strcmp(buf, "proc") == 0) {
         print_procs();
     } else if(strcmp(buf, "halt") == 0) {
-        printk("Shutting down\n");
+        console_print("Shutting down\n");
         halt();
         while(1);
     } else if(strcmp(buf, "reboot") == 0) {
-        printk("Rebooting\n");
+        console_print("Rebooting\n");
         reboot();
     } else {
-        printk("Command not found\n");
+        console_print("Command not found\n");
     }
 }
 
@@ -107,7 +125,7 @@ void console_cd(char *dir, char *command) {
         if(vfs_cd(senddir)) {
             strcpy(dir, senddir);
         } else {
-            printk("cd %s: directory not found\n", senddir);
+            console_print("cd %s: directory not found\n", senddir);
         }
     } else {
         memset(dir, 0, 64);
@@ -135,7 +153,7 @@ void console_start(char *dir, char *command) {
     if(procn != PROC_STOPPED) {
         while(proc_state(procn) != PROC_STOPPED);
         remove_proc(procn);
-        printk("\n");
+        console_print("\n");
     }
 }
 
@@ -149,7 +167,7 @@ void console_read(char *dir, char *command) {
     strcat(senddir, get_argument(command, 1));
     file *f = vfs_file_open(senddir, "r");
     if(f->type != FS_FILE) {
-        printk("read: file %s not found\n", senddir);
+        console_print("read: file %s not found\n", senddir);
     } else {
         print_file(f);
     }
@@ -167,7 +185,7 @@ void console_write(char *dir, char *command) {
     
     file *f = vfs_file_open(senddir, "w");
     if(f->type != FS_FILE) {
-        printk("write: file %s not found\n", senddir);
+        console_print("write: file %s not found\n", senddir);
     } else {
         vfs_file_write(f, get_argument(command, 2));
     }
@@ -184,7 +202,7 @@ void console_touch(char *dir, char *command) {
     strcat(senddir, get_argument(command, 1));
     
     if(!vfs_touch(senddir)) {
-        printk("touch: Error creating file\n");
+        console_print("touch: Error creating file\n");
     }
 }
 
@@ -198,7 +216,7 @@ void console_delete(char *dir, char *command) {
     strcat(senddir, get_argument(command, 1));
     
     if(!vfs_delete(senddir)) {
-        printk("delete: Error deleting file\n");
+        console_print("delete: Error deleting file\n");
     }
 }
 
@@ -225,12 +243,12 @@ char *console_pwd_user() {
  */
 void print_file(file *f) {
     if(f->type == FS_NULL) {
-        printk("Cannot open file\n");
+        console_print("Cannot open file\n");
         return;
     }
 
     if((f->type & FS_DIR) == FS_DIR) {
-        printk("Cannot display content of directory.\n");
+        console_print("Cannot display content of directory.\n");
         return;
     }
 
@@ -239,7 +257,7 @@ void print_file(file *f) {
         vfs_file_read(f, buf);
 
         for(int i = 0; i < 512; i++)
-            printk("%c", buf[i]);
+            console_print("%c", buf[i]);
 
         if(f->eof != 1) {
         	getchar();
@@ -251,9 +269,9 @@ void print_file(file *f) {
  * Prints memory info
  */
 void print_meminfo() {
-    printk("Total mem: %d MB\nFree mem: %d MB\n", get_mem_size() / 1024, (get_max_blocks() - get_used_blocks()) * 4 / 1024);
-    printk("Heap size: %d KB Free heap: %d KB\n", get_heap_size() / 1024, (get_heap_size() - get_used_heap()) / 1024);
-    printk("cr0: %x cr2: %x cr3: %x\n", get_cr0(), get_cr2(), get_pdbr());
+    console_print("Total mem: %d MB\nFree mem: %d MB\n", get_mem_size() / 1024, (get_max_blocks() - get_used_blocks()) * 4 / 1024);
+    console_print("Heap size: %d KB Free heap: %d KB\n", get_heap_size() / 1024, (get_heap_size() - get_used_heap()) / 1024);
+    console_print("cr0: %x cr2: %x cr3: %x\n", get_cr0(), get_cr2(), get_pdbr());
 }
 
 /**

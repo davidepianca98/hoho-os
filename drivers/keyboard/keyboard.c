@@ -18,6 +18,7 @@
 #include <drivers/keyboard.h>
 #include <drivers/video.h>
 #include <drivers/io.h>
+#include <console.h>
 
 enum KBD_PORTS {
 	KBD_CHECK = 0x64,
@@ -136,7 +137,7 @@ void gets(char *str) {
         else if(c == '\b')
             if(count > 0)
                 count--;
-        printk("%c", c);
+        console_print("%c", c);
         if(c == '\n') {
             str[count] = '\0';
             break;

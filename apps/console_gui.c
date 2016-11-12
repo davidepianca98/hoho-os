@@ -92,3 +92,7 @@ void console_run_gui() {
     }
     kfree(buffer);
 }
+
+void console_gui_print(char *str) {
+    text_area_append(text_area, str);
+}

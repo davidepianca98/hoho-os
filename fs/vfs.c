@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <console.h>
 #include <hal/hal.h>
 #include <lib/string.h>
 #include <fs/vfs.h>
@@ -34,7 +35,7 @@ void vfs_ls() {
         if(devs[i] != NULL) {
             device_t *device = get_dev_by_id(i);
             if(device)
-                printk("%s\n", device->mount);
+                console_print("%s\n", device->mount);
         }
     }
 }

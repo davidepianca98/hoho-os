@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <console.h>
 #include <proc/proc.h>
 #include <drivers/io.h>
 #include <hal/tss.h>
@@ -49,7 +50,7 @@ int start_proc(char *name, char *arguments) {
     // Create a new page directory
     proc->pdir = create_address_space();
     if(!proc->pdir) {
-        printk("Failed finding address space\n");
+        console_print("Failed finding address space\n");
         return PROC_STOPPED;
     }
     
@@ -65,13 +66,13 @@ int start_proc(char *name, char *arguments) {
     }
     
     if(!build_stack(proc->thread_list, proc->pdir, 0)) {
-        printk("Failed allocating memory, error 1\n");
+        console_print("Failed allocating memory, error 1\n");
         sched_state(1);
         return PROC_STOPPED;
     }
     
     if(!build_heap(proc->thread_list, proc->pdir, 0)) {
-        printk("Failed allocating memory, error 2\n");
+        console_print("Failed allocating memory, error 2\n");
         sched_state(1);
         return PROC_STOPPED;
     }
@@ -79,13 +80,13 @@ int start_proc(char *name, char *arguments) {
     uint32_t argc, argv;
     
     if(!heap_fill(proc->thread_list, name, arguments, &argc, &argv)) {
-        printk("Failed allocating memory, error 3\n");
+        console_print("Failed allocating memory, error 3\n");
         sched_state(1);
         return PROC_STOPPED;
     }
     
     if(!stack_fill(proc->thread_list, argc, argv)) {
-        printk("Failed allocating memory, error 4\n");
+        console_print("Failed allocating memory, error 4\n");
         sched_state(1);
         return PROC_STOPPED;
     }
@@ -218,14 +219,14 @@ void end_proc(int ret) {
 
     process_t *cur = get_cur_proc();
     if(cur == NULL) {
-        printk("Process not found\n");
+        console_print("Process not found\n");
         sched_state(1);
         enable_int();
         while(1);
     }
     
     if(ret)
-        printk("Process %d returned with error: %d\n", cur->thread_list->pid, ret);
+        console_print("Process %d returned with error: %d\n", cur->thread_list->pid, ret);
     
     cur->state = PROC_STOPPED;
     

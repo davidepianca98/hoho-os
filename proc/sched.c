@@ -55,11 +55,6 @@ void main_proc() {
 }
 
 uint32_t schedule(uint32_t esp) {
-    if(list != list->thread_list->parent) {
-        printk("Something wrong\n");
-        panic();
-    }
-    
     // Check if the time slice ended
     if(get_tick_count() <= list->thread_list->time)
         return esp;
@@ -180,8 +175,8 @@ int get_nproc() {
 void print_procs() {
     process_t *app = list;
     for(int i = 0; i < n_proc; i++) {
-        printk("Name: %s id: %d page directory: 0x%x state: %d\n", app->name, app->thread_list->pid, app->pdir, app->state);
-        printk("    eip: 0x%x esp: 0x%x stack limit: 0x%x\nimage base: 0x%x image size: %x\n\n", app->thread_list->eip, app->thread_list->esp, app->thread_list->stack_limit, app->thread_list->image_base, app->thread_list->image_size);
+        console_print("Name: %s id: %d page directory: 0x%x state: %d\n", app->name, app->thread_list->pid, app->pdir, app->state);
+        console_print("    eip: 0x%x esp: 0x%x stack limit: 0x%x\nimage base: 0x%x image size: %x\n\n", app->thread_list->eip, app->thread_list->esp, app->thread_list->stack_limit, app->thread_list->image_base, app->thread_list->image_size);
         app = app->next;
     }
 }

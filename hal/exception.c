@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <console.h>
 #include <hal/hal.h>
 #include <panic.h>
 #include <drivers/video.h>
@@ -24,43 +25,43 @@ void (*return_error)() = (void *) RETURN_ADDR;
 
 void default_ir_handler() {
     disable_int();
-    printk("Unhandled exception\n");
+    console_print("Unhandled exception\n");
     panic();
 }
 
 void ex_divide_by_zero() {
-    printk("Division by zero\n");
+    console_print("Division by zero\n");
     panic();
 }
 
 void ex_single_step() {
-    printk("Single step\n");
+    console_print("Single step\n");
     panic();
 }
 
 void ex_nmi() {
-    printk("NMI trap\n");
+    console_print("NMI trap\n");
     panic();
 }
 
 void ex_breakpoint() {
-    printk("Breakpoint\n");
+    console_print("Breakpoint\n");
     panic();
 }
 
 void ex_overflow() {
-    printk("Overflow\n");
+    console_print("Overflow\n");
     panic();
 }
 
 void ex_bounds_check() {
-    printk("Bounds check\n");
+    console_print("Bounds check\n");
     panic();
 }
 
 void ex_invalid_opcode(struct regs *re) {
-    printk("Invalid opcode\n");
-    printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
+    console_print("Invalid opcode\n");
+    console_print("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
     if(re->es == 0x10) {
         // If an Invalid Opcode occurs in kernel mode, we don't really want to continue
         panic();
@@ -71,34 +72,34 @@ void ex_invalid_opcode(struct regs *re) {
 }
 
 void ex_device_not_available() {
-    printk("Device not available\n");
+    console_print("Device not available\n");
     panic();
 }
 
 void ex_double_fault() {
-    printk("Double fault\n");
+    console_print("Double fault\n");
     panic();
 }
 
 void ex_invalid_tss() {
-    printk("Invalid TSS\n");
+    console_print("Invalid TSS\n");
     panic();
 }
 
 void ex_segment_not_present() {
-    printk("Segment not present\n");
+    console_print("Segment not present\n");
     panic();
 }
 
 void ex_stack_fault() {
-    printk("Stack fault\n");
+    console_print("Stack fault\n");
     panic();
 }
 
 void ex_gpf(struct regs_error *re) {
-    printk("\nGeneral protection fault\nError code: %b\n", re->error);
-    printk("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
-    printk("cr2: %x cr3: %x\n", get_cr2(), get_pdbr());
+    console_print("\nGeneral protection fault\nError code: %b\n", re->error);
+    console_print("eip: %x cs: %x\neax: %d ebx: %d ecx: %d edx: %d\nesp: %x ebp: %x esi: %d edi: %d\nds: %x es: %x fs: %x gs: %x\n", re->eip, re->cs, re->eax, re->ebx, re->ecx, re->edx, re->esp, re->ebp, re->esi, re->edi, re->ds, re->es, re->fs, re->gs);
+    console_print("cr2: %x cr3: %x\n", get_cr2(), get_pdbr());
     
     // If a GPF occurs in kernel mode, we don't really want to continue
     if(re->es == 0x10) {
@@ -113,8 +114,8 @@ void ex_page_fault(struct regs_error *re) {
     int virt_addr = get_cr2();
     mm_addr_t phys_addr = (mm_addr_t) get_phys_addr(get_page_directory(), virt_addr);
     
-    printk("\nPage fault at addr: 0x%x\n", virt_addr);
-    printk("Phys addr: 0x%x\n", phys_addr);
+    console_print("\nPage fault at addr: 0x%x\n", virt_addr);
+    console_print("Phys addr: 0x%x\n", phys_addr);
     // If a Page Fault occurs in kernel mode, we don't really want to continue
     if(re->es == 0x10) {
         panic();
@@ -125,22 +126,22 @@ void ex_page_fault(struct regs_error *re) {
 }
 
 void ex_fpu_error() {
-    printk("FPU error\n");
+    console_print("FPU error\n");
     panic();
 }
 
 void ex_alignment_check() {
-    printk("Alignment check\n");
+    console_print("Alignment check\n");
     panic();
 }
 
 void ex_machine_check() {
-    printk("Machine check\n");
+    console_print("Machine check\n");
     panic();
 }
 
 void ex_simd_fpu() {
-    printk("SIMD FPU error\n");
+    console_print("SIMD FPU error\n");
     panic();
 }
 

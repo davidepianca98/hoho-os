@@ -76,7 +76,6 @@ void floppy_dma_init() {
     c.l = FLOPPY_DMA_LEN - 1;
     
     if((a.l >> 24) || (c.l >> 16) || (((a.l & 0xFFFF) + c.l) >> 16)) {
-        printk("Wrong DMA address\n");
         return;
     }
     dma_reset();
@@ -373,8 +372,6 @@ int floppy_detect_drives() {
         ndrives++;
     }
 
-    //printk(" - Floppy drive 0: %s\n", drive_types[drives >> 4]);
-    //printk(" - Floppy drive 1: %s\n", drive_types[drives & 0xF]);
     return ndrives;
 }
 

@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 
+#include <console.h>
 #include <proc/proc.h>
 #include <proc/thread.h>
 #include <drivers/io.h>
@@ -105,7 +106,7 @@ void stop_thread(int code) {
 
     process_t *cur = get_cur_proc();
     if(cur == NULL) {
-        printk("Process not found\n");
+        console_print("Process not found\n");
         sched_state(1);
         enable_int();
         while(1);

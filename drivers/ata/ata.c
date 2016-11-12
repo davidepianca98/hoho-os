@@ -81,20 +81,16 @@ void identify(drive_t *drive) {
     outportb(drive->status_reg, ATA_IDENTIFY);
     if(inportb(drive->status_reg) == 0) {
         drive->present = NULL;
-        //printk("Drive not present\n");
     } else {
         if((inportb(drive->lba_mid_reg) != 0) || (inportb(drive->lba_high_reg) != 0)) {
             drive->present = NULL;
-            //printk("Not an ATA drive\n");
         } else {
             while((inportb(drive->status_reg) & 0x80) != 0);
             while(((inportb(drive->status_reg) & 0x8) != 8) && ((inportb(drive->status_reg) & 0x0) == 0));
             if((inportb(drive->status_reg) & 0x0) == 1) {
                 drive->present = NULL;
-                //printk("Error bit set\n");
             } else {
                 drive->present = 1;
-                //printk("Drive available\n");
                 for(int i = 0; i < 256; i++) {
                     switch(i) {
                         case 83:
@@ -127,8 +123,6 @@ void identify(drive_t *drive) {
                             break;
                     }
                 }
-                //printk("Drive lba mode: %d\n", drive->lba_mode);
-                //printk("secs 28: %d secs 48: %d\n", drive->total_sectors_28, drive->total_sectors_48);
             }
         }
     }
