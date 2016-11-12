@@ -26,8 +26,6 @@ enum KBD_PORTS {
 };
 
 static uint8_t lastkey = 0;
-static uint8_t key_loc = 0;
-static uint8_t kbd_enabled = 0;
 /*
 static uint8_t caps_lock = 0;
 static uint8_t num_pad = 0;
@@ -37,36 +35,18 @@ static uint8_t ctrl = 0;
 static uint8_t shift = 0;
 static uint8_t alt = 0;*/
 
-uint8_t *keycache;
-
 extern void keyboard_int();
 
 void keyboard_init() {
     install_ir(33, 0x80 | 0x0E, 0x8, &keyboard_int);
     outportb(KBD_CHECK, 0xAE);
-    keycache = kmalloc(sizeof(uint8_t) * 256);
-	kbd_enabled = 1;
 }
 
 void keyboard_read_key() {
     lastkey = 0;
     if(inportb(KBD_CHECK) & 1) {
         lastkey = keyboard_to_ascii(inportb(KBD_IN));
-        keycache[key_loc] = lastkey;
-        key_loc++;
 	}
-}
-
-char keyboard_get_key() {
-    char c = 0;
-	if(key_loc == 0)
-	    return c;
-	c = keycache[0];
-	key_loc--;
-	for(int i = 0; i < 255; i++) {
-		keycache[i] = keycache[i+1];
-	}
-	return c;
 }
 
 char keyboard_get_lastkey() {
@@ -91,7 +71,7 @@ uint8_t keyboard_to_ascii(uint8_t key){
 	if(key == BACKSLASH_PRESSED) return '\\';
 	if(key >= ONE_PRESSED && key <= NINE_PRESSED)
 		return num[key - ONE_PRESSED];
-	if(key >= 0x10 && key <= 0x1C)
+	else if(key >= 0x10 && key <= 0x1C)
 		return qwertzuiop[key - 0x10];
 	else if(key >= 0x1E && key <= 0x26)
 		return asdfghjkl[key - 0x1E];

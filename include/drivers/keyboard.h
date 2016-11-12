@@ -97,7 +97,6 @@ enum KEYCODE {
 void keyboard_init();
 uint8_t keyboard_enabled();
 void keyboard_read_key();
-char keyboard_get_key();
 char keyboard_get_lastkey();
 void keyboard_invalidate_lastkey();
 uint8_t keyboard_to_ascii(uint8_t key);

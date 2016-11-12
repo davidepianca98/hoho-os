@@ -218,8 +218,8 @@ char *strcat(char *dest, char *src) {
     
     while(*dest)
         dest++;
-    while(*src)
-        *dest++ = *src++;
+    while((*dest++ = *src++))
+        ;
     return ret;
 }
 
